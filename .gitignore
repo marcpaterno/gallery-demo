@@ -1,0 +1,7 @@
+*.root
+.Rhistory
+*.pyc
+*.pdf
+.RData
+demo-linux
+demo-osx
