@@ -2,6 +2,12 @@
 #define FOR_EACH_ENTRY_HH
 
 #include <cstddef>
+#include <type_traits>
+
+// traits to detect FindMany types.
+namespace art { template <class B, class D> class FindMany; }
+template <class T> struct is_FindMany : std::false_type { };
+template <class B, class D> struct is_FindMany<art::FindMany<B,D>> : std::true_type { };
 
 // for_each_entry(fm, f) encapsulates a loop over all entries in the
 // primary product of an association, and calls the provided function
@@ -15,6 +21,7 @@
 
 template <class FM, class FCN>
 void for_each_entry(FM const& fm, FCN f) {
+  static_assert(is_FindMany<FM>::value, "fm is not an art::FindMany");
   for (std::size_t i = 0, sz = fm.size(); i != sz; ++i) {
     f(fm.at(i));
   }
