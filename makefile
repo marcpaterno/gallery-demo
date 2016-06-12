@@ -26,11 +26,7 @@ else
   EXEC=demo-linux
 endif
 
-$(EXEC): demo.cc
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
-
-demo.o: demo.C
-	g++  $(CPPFLAGS) $(CXXFLAGS) -c $<
-
-
+$(EXEC): demo.cc for_each_associated.hh for_each_entry.hh
+	@echo Building $(EXEC)
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
