@@ -40,10 +40,10 @@ void demo() {
     using vertices_t = vector<recob::Vertex>;
     auto const& vertices_h = ev.getValidHandle<vertices_t>(vertex_tag);
 
-    FindMany<recob::Cluster, unsigned short> clus_for_vtx(vertices_h, ev, assns_tag);
+    FindMany<recob::Cluster, unsigned short> clusters_for_vertex(vertices_h, ev, assns_tag);
     for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
       vector<recob::Cluster const*> clusters;
-      clus_for_vtx.get(i, clusters);
+      clusters_for_vertex.get(i, clusters);
       nclust_hist->Fill(clusters.size());
     }
   }
