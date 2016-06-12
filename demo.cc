@@ -76,14 +76,3 @@ int main() {
   histfile.Write();
   histfile.Close();
 }
-
-
-// // Here's a local function object that does the same histogram
-// // filling. We pass it to an algorithm that does the outer loop.
-// auto fill_hists = [&nclust_hist, &nhits_hist](auto const& cs) {
-//   nclust_hist.Fill(cs.size());
-//   for (auto pc : cs) {
-//     nhits_hist.Fill(pc->NHits());
-//   };
-// };
-// for_each_entry(clusters_for_vertex, fill_hists);
