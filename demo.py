@@ -16,8 +16,6 @@ def provide_get_valid_handle(klass):
 
 
 # Now for the script...
-#for x in ['GALLERY_INC', 'CANVAS_INC', 'FHICLCPP_INC', 'CETLIB_INC', 'BOOST_INC' ]:
-#        ROOT.gInterpreter.AddIncludePath(os.environ.get(x))
 
 print "Reading headers..."
 read_header('gallery/ValidHandle.h')
@@ -29,41 +27,33 @@ provide_get_valid_handle('std::vector<recob::Vertex>')
 print "Preparing before event loop..."
 mctruths_tag = ROOT.art.InputTag("generator");
 vertex_tag   = ROOT.art.InputTag("linecluster");
+filenames = ROOT.vector(ROOT.string)(1, "dune.root")
 
 # Make histograms before we open the art/ROOT file, or the file ends
 # up owning the histograms.
 histfile = ROOT.TFile("hist.root", "RECREATE")
 npart_hist = ROOT.TH1F("npart", "Number of particles per MCTruth", 51, -0.5, 50.5)
-nvert_hist = ROOT.TH1F("nvert", "Number of vertices per event", 51, -0.5, 50.5)
-
-ROOT.gStyle.SetOptStat("nemo") # Print name, entries, and overflows.
-
-filenames = ROOT.vector(ROOT.string)(1, "dune.root")
+nvert_hist = ROOT.TH1F("nclus", "Number of clusters per vertex", 51, -0.5, 50.5)
 
 print "Creating event object ..."
 ev = ROOT.gallery.Event(filenames)
 
-# Capture the functions that will get ValidHandles
+# Capture the functions that will get ValidHandles. This avoids some
+# inefficiency in constructing the function objects many times.
 get_mctruths = ev.getValidHandle(ROOT.vector(ROOT.simb.MCTruth))
 get_vertices = ev.getValidHandle(ROOT.vector(ROOT.recob.Vertex))
+findMaker = ROOT.gallery.FindMaker()
 
 print "Entering event loop..."
 while (not ev.atEnd()) :
         mctruths = get_mctruths(mctruths_tag)
-        nparts = mctruths.product()[0].NParticles()
-        npart_hist.Fill(nparts)
+        if (not mctruths.empty()):
+                npart_hist.Fill(mctruths.product()[0].NParticles())
 
-        vertices = get_vertices(vertex_tag);
-        #print 'Number of showers = {}'.format(showers.product().size())
-        # Create FindMany object from the showers handle.
-        # Loop over all showers; for each, count how many clusters.
-        # fill the nclus_hist histogram for each value of number of clusters per shower.
-        
+        # The Assns<> involved in demo.cc appears to be inaccessible
+        # from PyROOT at this time, because of PyROOT's incomplete
+        # object model.
         ev.next()
 
 print "Writing histograms..."
 histfile.Write()
-
-
-
-
