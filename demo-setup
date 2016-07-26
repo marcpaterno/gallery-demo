@@ -1,3 +1,5 @@
+# wget http://scisoft.fnal.gov/scisoft/bundles/tools/pullProducts
+# chmod +x pullProducts
 # ./pullProducts $HOME/products <platform> larsoftobj-v1_02_00 e10 prof
 # <platform> : u14, d14, slf6, slf7
 
