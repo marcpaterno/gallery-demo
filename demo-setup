@@ -1,10 +1,9 @@
 # wget http://scisoft.fnal.gov/scisoft/bundles/tools/pullProducts
 # chmod +x pullProducts
-# ./pullProducts $HOME/products <platform> larsoftobj-v1_02_00 e10 prof
+# ./pullProducts $HOME/products <platform> larsoftobj-v1_04_00 e10 prof
 # <platform> : u14, d14, slf6, slf7
 
 # Adjust the next line, if necessary, to reflect the location into
 # which you have installed the products.
 source  ~/products/setup
-setup larsimobj v1_02_00 -q e10:prof
-setup gallery v1_02_02 -q e10:nu:prof
+setup larsoftobj v1_04_00 -q e10:prof
