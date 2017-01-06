@@ -1,9 +1,37 @@
+# In order to use gallery, you must use the UPS setup command to make the
+# appropriate packages active. The appropriate packages include those defined
+# by your experiment and which provide the ROOT dictionaries for the data
+# products in the file you are going to read.
+#
+# This example uses the product larsoftobj, which provides the dictionaries for
+# all of the LArSoft data products. Setting up larsoftobj also sets up the
+# appropriate version of gallery itself.
+#
+# If you need to install a bundle of product, you can use the pullProducts
+# script to do so. An example of how to do that for larsoftobj version 1.08.01
+# is shown below. Please use the product name and version appropriate for your
+# experiment.
+#
+#     -- get the pullProducts script, and make it executable
 # wget http://scisoft.fnal.gov/scisoft/bundles/tools/pullProducts
 # chmod +x pullProducts
-# ./pullProducts $HOME/products <platform> larsoftobj-v1_04_00 e10 prof
-# <platform> : u14, d14, slf6, slf7
+#     -- use pullProducts to install larsoftobj (and all of its dependencies)
+#     -- under $HOME/products
+#     -- Note that <platform> should be one of u14, d14, d15, slf6, slf7
+# ./pullProducts $HOME/products <platform> larsoftobj-v1_08_02 e10 prof
 
 # Adjust the next line, if necessary, to reflect the location into
 # which you have installed the products.
-source  ~/products/setup
-setup larsoftobj v1_04_00 -q e10:prof
+if [ ! -f ${HOME}/products/setup ]
+then
+  echo "You do not have the UPS products installed under ${HOME}/products; please"
+  echo "edit this script to reflect the location of your UPS products installation."
+  exit 1
+fi
+
+source  $HOME/products/setup
+
+# The following setup assumes you want the specified version of larsoftobj.
+# You should replace it with whatever product and version is appropriate for
+# your experiment.
+setup -B larsoftobj v1_08_02 -q +e10:+prof
