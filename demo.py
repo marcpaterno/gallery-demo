@@ -3,6 +3,10 @@ import ROOT
 
 print "Starting demo..."
 
+if (len(sys.argv) < 2):
+	print "Please specify an art/ROOT file to read"
+	sys.exit(1)
+
 # Some functions that I find useful to reduce error-prone typing.
 def read_header(h):
         """Make the ROOT C++ jit compiler read the specified header."""
@@ -25,8 +29,7 @@ provide_get_valid_handle('std::vector<simb::MCTruth>')
 
 print "Preparing before event loop..."
 mctruths_tag = ROOT.art.InputTag("generator");
-vertex_tag   = ROOT.art.InputTag("linecluster");
-filenames = ROOT.vector(ROOT.string)(1, "dune.root")
+filenames = ROOT.vector(ROOT.string)(1, sys.argv[1])
 
 # Make histograms before we open the art/ROOT file, or the file ends
 # up owning the histograms.
