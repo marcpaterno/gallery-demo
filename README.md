@@ -22,12 +22,19 @@ There are three different demonstration codes:
 2. `demo.C` is a ROOT macro intended to be invoked within an interactive ROOT session, and which creates a few histograms in memory. The macro function `demo` takes a single argument, the name of the _art_/ROOT data file to be processed. Assuming one has a local _art_/ROOT file named "sample.root", a sample session might be:
     ```
     $ root -l
+
     root [0] .x demo.C("sample.root")
+    
     Successfully opened file sample.root
+    
     Closing file, read 1232928 bytes in 119 transactions
+    
     Processed 100 events in an average of 396 microseconds/event
+    
     Total processing time (including file opening) was 326 milliseconds
+    
     root [1] nhits->Draw();
+    
     Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
     ```
 3. `demo.py` is a PyROOT program that processes an input file and creates a ROOT histogram file. It can be run with `python demo.py`
