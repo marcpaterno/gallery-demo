@@ -26,7 +26,7 @@ if [ ! -f ${HOME}/products/setup ]
 then
   echo "You do not have the UPS products installed under ${HOME}/products; please"
   echo "edit this script to reflect the location of your UPS products installation."
-  exit 1
+  return 1
 fi
 
 source  $HOME/products/setup
