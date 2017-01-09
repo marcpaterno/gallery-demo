@@ -1,7 +1,0 @@
-To run the ROOT macro demonstration:
-
-root -l
-.L demo.C
-demo()
-nclus->Draw()
-nclus->Fit("landau")
