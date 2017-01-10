@@ -14,9 +14,12 @@ However, `gallery` is not a full-featured framework. In fact, it is not a framew
 * writing of _art_/ROOT data files, and
 * use of "services" that are framework-dependent.
 
-## Running the demonstrations
+## Building and Running the demonstrations
 
-There are three different demonstration codes:
+
+There are three different demonstration codes, listed below. Building and use of each requires the right environment be established. Specifically, an appropriate version of the UPS product `gallery` must be available, and ROOT dictionaries for the classes corresponding to objects in the file to be processed must be available. All this is usually established by "setting up" your experiment's software environment, using whatever setup scripts are provided by your experiment. The file `demo-setup` in this repository is an example setup script, which assumes that one has available a specific version of the `larsoftobj` distribution bundle. Please consult the instructions within that file for additional instructions.
+
+The three demonstration programs are:
 
 1. `demo.cc` is a C++ main program which processes an input file and creates a ROOT histogram file. The provided `makefile` can be used to build the executable `demo` from `demo.cc`. `demo` expects one or more arguments, the names of the _art_/ROOT data files to be read.
 2. `demo.C` is a ROOT macro intended to be invoked within an interactive ROOT session, and which creates a few histograms in memory. The macro function `demo` takes a single argument, the name of the _art_/ROOT data file to be processed. Assuming one has a local _art_/ROOT file named "sample.root", a sample session might be:
