@@ -23,7 +23,6 @@ The three demonstration programs are:
 
 1. `demo.cc` is a C++ main program which processes an input file and creates a ROOT histogram file. The provided `makefile` can be used to build the executable `demo` from `demo.cc`. `demo` expects one or more arguments, the names of the _art_/ROOT data files to be read.
 2. `demo.C` is a ROOT macro intended to be invoked within an interactive ROOT session, and which creates a few histograms in memory. The macro function `demo` takes a single argument, the name of the _art_/ROOT data file to be processed. Assuming one has a local _art_/ROOT file named "sample.root", a sample session might be:
-
 ```
     $ root -l
     root [0] .x demo.C("sample.root")
