@@ -33,7 +33,7 @@ The three demonstration programs are:
     Total processing time (including file opening) was 326 milliseconds
     root [1] nhits->Draw();
     Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
-    ```
+```
 3. `demo.py` is a PyROOT program that processes an input file and creates a ROOT histogram file. It can be run with `python demo.py`
 
 Both `demo.cc` and `demo.C` make use of the function `analyze`, declared in `analyze.hh` and defined in `analyze.cc`. The compiled program writes ROOT histograms to an output file named "histfile.root"; the ROOT macro creates ROOT histograms in memory.
