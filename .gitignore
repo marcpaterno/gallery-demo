@@ -7,3 +7,11 @@ demo-linux
 demo-osx
 demo
 *.html
+CMakeFiles/
+.ninja_deps
+.ninja_log
+CMakeCache.txt
+build.ninja
+rules.ninja
+cmake_install.cmake
+gallerydemo.cbp
