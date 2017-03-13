@@ -23,7 +23,7 @@ The three demonstration programs are:
 
 ### `demo.cc`
 
-demo.cc` is a C++ main program which processes an input file and creates a ROOT histogram file. The provided `GNUmakefile` can be used to build the executable `demo` from `demo.cc`. `demo` expects one or more arguments, the names of the _art_/ROOT data files to be read. If you prefer to use CMake, there is also a simple `CMakeLists.txt`. Note that this does not use the facilities provided by `cetbuildtools`; it is "bare" CMake.
+`demo.cc` is a C++ main program which processes an input file and creates a ROOT histogram file. The provided `GNUmakefile` can be used to build the executable `demo` from `demo.cc`. `demo` expects one or more arguments, the names of the _art_/ROOT data files to be read. If you prefer to use CMake, there is also a simple `CMakeLists.txt`. Note that this does not use the facilities provided by `cetbuildtools`; it is "bare" CMake.
 
 
 ### `demo.C`
