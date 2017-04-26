@@ -19,6 +19,7 @@
 // that are provided by gallery can be more easily identified.
 using namespace art;
 using namespace std;
+using namespace std::chrono;
 
 // We use a function try block to catch and report on all exceptions.
 int main(int argc, char** argv) try {
@@ -59,20 +60,19 @@ int main(int argc, char** argv) try {
   // stream.
   // Use gallery::Event::next() to go to the next event.
 
-  auto start_time = chrono::system_clock::now();
-  vector<chrono::microseconds> times; // we'll record the time for each event.
+  auto start_time = system_clock::now();
+  vector<microseconds> times; // we'll record the time for each event.
 
   for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
-    auto const t0 = chrono::system_clock::now();
+    auto const t0 = system_clock::now();
     analyze(ev, tags, hists);
-    times.push_back(chrono::duration_cast<chrono::microseconds>(
-        chrono::system_clock::now() - t0));
+    times.push_back(duration_cast<microseconds>(system_clock::now() - t0));
   }
 
-  auto const elapsed_time = chrono::duration_cast<chrono::milliseconds>(
-      chrono::system_clock::now() - start_time);
+  auto const elapsed_time =
+      duration_cast<milliseconds>(system_clock::now() - start_time);
   auto const sum_times =
-      std::accumulate(begin(times), end(times), chrono::microseconds(0));
+      std::accumulate(begin(times), end(times), microseconds(0));
 
   cout << "Processed " << times.size() << " events in an average of "
        << sum_times.count() / times.size() << " microseconds/event\n";
