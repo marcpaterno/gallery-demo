@@ -4,30 +4,24 @@
 #include "gallery/Event.h"
 #include "canvas/Utilities/InputTag.h"
 
-#include "TH1F.h"
+// We need to that TH1F names a class, but we don't need to know more
+//  about that class here.
+class TH1F;
+class TH2F;
 
-// We introduce the Tags struct to group together all the InputTags in
-// which we are interested. We use a struct (rather than a
-// vector<InputTag> or array<InputTag> or a tuple<...>) so that we can
-// give meaningful names to the individual InputTag
-// objects. Everything is declared const, because there is no need to
-// modify an InputTag after it is constructed.
-struct Tags {
-  art::InputTag const mctruths;
-  art::InputTag const vertices;
-  art::InputTag const vertex_cluster_assns;
-  art::InputTag const cluster_hit_assns;
-};
+void analyze_mctruths(gallery::Event const& ev,
+                      art::InputTag const& mctruth_tag, TH1F& hist);
 
-// We introduce the Histos struct to group together all the histogram
-// objects we'll be filling. They are not declared const, because
-// we'll be modifying (filling!) them.
-struct Histos {
-  TH1F nparticles;
-  TH1F nclusters;
-  TH1F nhits;
-};
+void analyze_vertices(gallery::Event const& ev, art::InputTag const& vertices_tag, TH1F& xhist,
+                      TH1F& yhist, TH1F& zhist,
+                      TH2F& xyhist);
 
-void analyze(gallery::Event const& ev, Tags const& tags, Histos& hists);
+void analyze_vertex_cluster_correlations(gallery::Event const& ev,
+                                         art::InputTag const& vertices_tag,
+                                         art::InputTag const& assns_tag,
+                                         TH2F& hist);
 
+void analyze_cluster_hit_correlations(gallery::Event const& ev,
+                                      art::InputTag const& clusters_tag,
+                                      art::InputTag const& assns_tag, TH2F& hist);
 #endif

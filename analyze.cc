@@ -1,42 +1,103 @@
 #include "analyze.hh"
 
-#include <vector>
-
-// Interactive ROOT is very sensitive to the order of these
-// headers. Take care with any reordering.
+#include "canvas/Persistency/Common/FindMany.h"
 #include "gallery/ValidHandle.h"
 #include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "canvas/Persistency/Common/FindMany.h"
+#include <vector>
 
 using namespace art;
 using namespace std;
 
-void analyze(gallery::Event const& ev, Tags const& tags, Histos& hists) {
+#include "TH1F.h"
+#include "TH2F.h"
 
-  // getValidHandle() is preferred to getByLabel(), for both art and
-  // gallery use. It does not require in-your-face error handling.
-  auto const& mctruths =
-      *ev.getValidHandle<vector<simb::MCTruth> >(tags.mctruths);
-  if (!mctruths.empty())
-    hists.nparticles.Fill(mctruths[0].NParticles());
+void analyze_mctruths(gallery::Event const& ev, InputTag const& mctruths_tag,
+                      TH1F& hist)
+{
+    // getValidHandle() is preferred to getByLabel(), for both art and
+    // gallery use. It does not require in-your-face error handling. We
+    // immediately dereference the ValidHandle to obtain a (const)
+    // reference to the underlying data product.
+    auto const& mctruths =
+        *ev.getValidHandle<vector<simb::MCTruth> >(mctruths_tag);
 
-  using vertices_t = vector<recob::Vertex>;
-  auto const& vertices_h = ev.getValidHandle<vertices_t>(tags.vertices);
-  FindMany<recob::Cluster, unsigned short> clusters_for_vertex(
-      vertices_h, ev, tags.vertex_cluster_assns);
-
-  for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
-    vector<recob::Cluster const*> clusters;
-    clusters_for_vertex.get(i, clusters);
-    hists.nclusters.Fill(clusters.size());
-
-    for (auto pclus : clusters) {
-      if (!pclus)
-        continue; // skip null pointers
-      hists.nhits.Fill(pclus->NHits());
+    for (auto const& mctruth : mctruths) {
+        hist.Fill(mctruth.NParticles());
     }
-  }
+}
+
+void analyze_vertices(gallery::Event const& ev, InputTag const& vertices_tag,
+                      TH1F& xhist, TH1F& yhist, TH1F& zhist, TH2F& xyhist)
+{
+    auto const& vertices =
+        *ev.getValidHandle<vector<recob::Vertex> >(vertices_tag);
+
+    for (auto const& vertex : vertices) {
+        // The interface to recob::Vertex forces us to use C-style code.
+        // here.
+        double pos[3];
+        vertex.XYZ(pos);
+        xhist.Fill(pos[0]);
+        yhist.Fill(pos[1]);
+        zhist.Fill(pos[2]);
+        xyhist.Fill(pos[0], pos[1]);
+    }
+}
+
+void analyze_vertex_cluster_correlations(gallery::Event const& ev,
+                                         InputTag const& vertices_tag,
+                                         InputTag const& assns_tag,
+                                         TH2F& hist)
+{
+    // Note that we do not dereference the ValidHandle -- vertices_h is
+    // a ValidHandle<vector<recob::Vertex>>. We will need the handle to
+    // form the smart query object below.
+    auto const vertices_h = ev.getValidHandle<vector<recob::Vertex> >(vertices_tag);
+
+    // We loop over each vertex, and for each vertex loop over all
+    // associated clusters. We have to use an indexec for loop so that
+    // we have the index 'i' to use within the loop, as required for use
+    // with the FindMany smart query object. The second template
+    // parameter of the FindMany indicates that each association between
+    // a Vertex and Cluster has an associated datum of type 'unsigned
+    // short'. Consult the documentation of the LArSoft data model to
+    // determine what that datum means!
+    FindMany<recob::Cluster, unsigned short> clusters_for_vertex(vertices_h, ev,
+                                                                 assns_tag);
+
+    for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
+        // We will fill this histogram once for each vertex.
+        vector<recob::Cluster const*> clusters;
+        clusters_for_vertex.get(i, clusters);
+        float adc_sum = 0.0f;
+        for (auto pcluster : clusters) {
+            adc_sum += pcluster->SummedADC();
+        }
+        hist.Fill(clusters.size(), adc_sum);
+    }
+}
+
+void analyze_cluster_hit_correlations(gallery::Event const& ev,
+                                      InputTag const& clusters_tag,
+                                      InputTag const& assns_tag, TH2F& hist)
+{
+    auto const clusters_h = ev.getValidHandle<vector<recob::Cluster> >(clusters_tag);
+    FindMany<recob::Hit> hits_for_cluster(clusters_h, ev, assns_tag);
+
+    for (size_t i = 0, sz = clusters_h->size(); i != sz; ++i) {
+        auto const& cluster = (*clusters_h)[i];
+        // We will fill this histogram once for each cluster.
+        vector<recob::Hit const*> hits;
+        hits_for_cluster.get(i, hits);
+        float adc = cluster.SummedADC();
+        float summed_integrals = 0.0f;
+        for (auto phit : hits) {
+            summed_integrals += phit->Integral();
+        }
+        hist.Fill(adc, summed_integrals);
+    }
 }
