@@ -1,6 +1,6 @@
 #include <chrono>
-#include <functional>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -20,7 +20,8 @@
 using namespace art;
 using namespace std;
 
-int main(int argc, char** argv) {
+// We use a function try block to catch and report on all exceptions.
+int main(int argc, char** argv) try {
   if (argc == 1) {
     cout << "Please specify the name of one or more art/ROOT input file(s) to "
             "read.\n";
@@ -28,15 +29,15 @@ int main(int argc, char** argv) {
   }
 
   // We'll read all files specified on the command line. We don't
-  // bother to check that they are actually art/ROOT input files.
+  // bother to check that they are actually art/ROOT input files;
+  // gallery::Event will let us know if they are not. 
   vector<string> const filenames(argv + 1, argv + argc);
 
-  // These are the InputTags that identify the products we'll read
-  // from the gallery::Event. This is the same InputTag as is used in
-  // art.
-  InputTag const mctruths_tag{"generator"};
-  InputTag const vertex_tag{"linecluster"};
-  InputTag const assns_tag{"linecluster"};
+  // The Tags struct contains the InputTags that identify the products
+  // we'll read from the gallery::Event. They are the same InputTags
+  // as are used in art modules. The string specified is the label of
+  // the module the produced the product in question.
+  Tags tags {"generator", "linecluster", "linecluster", "linecluster"};
 
   // ROOT indicates a problem with construction by setting the 'zombie
   // bit', and so we'll be careful to test that -- so as not to cause
@@ -47,22 +48,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  TH1F npart_hist("npart", "Number of particles per MCTruth", 51, -0.5, 50.5);
-  if (npart_hist.IsZombie()) {
-    cerr << "Unable to create npart_hist, exiting...\n";
-    return 1;
-  }
-
-  TH1F nclust_hist("nclust", "Number of clusters per vertex", 51, -0.5, 50.5);
-  if (nclust_hist.IsZombie()) {
-    cerr << "Unable to create nclust_hist, exiting...\n";
-    return 1;
-  }
-
-  TH1F nhits_hist("nhits", "Number of hits per cluster", 101, -0.5, 100.5);
-  if (nhits_hist.IsZombie()) {
-    cerr << "Unable to create nhits_hits, exiting...\n";
-  }
+  // The Histos struct contains the histograms we'll be filling.
+  Histos hists { {"npart", "Number of particles per MCTruth", 51, -0.5, 50.5},
+      { "nclust", "Number of clusters per vertex", 51, -0.5, 50.5},
+	{"nhits", "Number of hits per cluster", 101, -0.5, 100.5}
+  };
 
   // The gallery::Event object acts as a cursor into the stream of events.
   // A newly-constructed gallery::Event is at the start if its stream.
@@ -75,18 +65,14 @@ int main(int argc, char** argv) {
 
   for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
     auto const t0 = chrono::system_clock::now();
-
-    analyze(ev, mctruths_tag, vertex_tag, assns_tag,
-            npart_hist, nclust_hist, nhits_hist);
-
-    times.push_back(chrono::duration_cast<chrono::microseconds>(
-        chrono::system_clock::now() - t0));
+    analyze(ev, tags, hists);
+    times.push_back(chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now() - t0));
   }
 
   auto const elapsed_time = chrono::duration_cast<chrono::milliseconds>(
       chrono::system_clock::now() - start_time);
   auto const sum_times =
-      accumulate(begin(times), end(times), chrono::microseconds(0));
+    std::accumulate(begin(times), end(times), chrono::microseconds(0));
 
   cout << "Processed " << times.size() << " events in an average of "
        << sum_times.count() / times.size() << " microseconds/event\n";
@@ -95,4 +81,10 @@ int main(int argc, char** argv) {
 
   histfile.Write();
   histfile.Close();
-}
+ } catch (std::exception const& ex) {
+  std::cerr << ex.what() << '\n';
+  return 1;
+ } catch (...) {
+  std::cerr << "Unidentifyable exception caught\n";
+  return 1;
+ }

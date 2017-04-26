@@ -6,12 +6,28 @@
 
 #include "TH1F.h"
 
-void analyze(gallery::Event const& ev,
-             art::InputTag const& mctruths_tag,
-             art::InputTag const& vertex_tag,
-             art::InputTag const& assns_tag,
-             TH1F& npart_hist,
-             TH1F& nclust_hist,
-             TH1F& nhits_hist);
+// We introduce the Tags struct to group together all the InputTags in
+// which we are interested. We use a struct (rather than a
+// vector<InputTag> or array<InputTag> or a tuple<...>) so that we can
+// give meaningful names to the individual InputTag
+// objects. Everything is declared const, because there is no need to
+// modify an InputTag after it is constructed.
+struct Tags {
+  art::InputTag const mctruths;
+  art::InputTag const vertices;
+  art::InputTag const vertex_cluster_assns;
+  art::InputTag const cluster_hit_assns;
+};
+
+// We introduce the Histos struct to group together all the histogram
+// objects we'll be filling. They are not declared const, because
+// we'll be modifying (filling!) them.
+struct Histos {
+  TH1F nparticles;
+  TH1F nclusters;
+  TH1F nhits;
+};
+
+void analyze(gallery::Event const& ev, Tags const& tags, Histos& hists);
 
 #endif
