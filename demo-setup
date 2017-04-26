@@ -17,21 +17,28 @@
 # chmod +x pullProducts
 #     -- use pullProducts to install larsoftobj (and all of its dependencies)
 #     -- under $HOME/products
-#     -- Note that <platform> should be one of u14, d14, d15, slf6, slf7
-# ./pullProducts $HOME/products <platform> larsoftobj-v1_08_02 e10 prof
+#     -- Note that <platform> should be one of u14, u16, d14, d15, d16, slf6, slf7
+# An example use would be:
+# ./pullProducts $HOME/products slf7 dunetpc-v06_33_00 e14 prof
 
 # Adjust the next line, if necessary, to reflect the location into
 # which you have installed the products.
-if [ ! -f ${HOME}/products/setup ]
+if [ ! -f /products/setup ]
 then
-  echo "You do not have the UPS products installed under ${HOME}/products; please"
+  echo "You do not have the UPS products installed under /products; please"
   echo "edit this script to reflect the location of your UPS products installation."
   return 1
 fi
 
-source  $HOME/products/setup
+# Replace the following with whatever is necessary to make UPS
+# available on your system. If your experiment has a setup script,
+# that is probably the right thing to use here.
+source /products/setup
 
-# The following setup assumes you want the specified version of larsoftobj.
+# The following setup assumes you want the specified version of the dunetpc
+# software.
 # You should replace it with whatever product and version is appropriate for
-# your experiment.
-setup -B larsoftobj v1_08_02 -q +e10:+prof
+# your experiment. If your experiment has a setup script that you have used
+# above, you probably don't need to do this at all.
+setup dunetpc v06_33_00 -q e14:prof
+setup -B gallery v1_03_12 -q +e14:+prof:+nu
