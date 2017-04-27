@@ -10,6 +10,7 @@
 #include <vector>
 
 using namespace art;
+using namespace recob;
 using namespace std;
 
 #include "TH1F.h"
@@ -40,11 +41,10 @@ analyze_vertices(gallery::Event const& ev,
                  TH1F& zhist,
                  TH2F& xyhist)
 {
-  auto const& vertices =
-    *ev.getValidHandle<vector<recob::Vertex>>(vertices_tag);
+  auto const& vertices = *ev.getValidHandle<vector<Vertex>>(vertices_tag);
 
   for (auto const& vertex : vertices) {
-    // The interface to recob::Vertex forces us to use C-style code.
+    // The interface to Vertex forces us to use C-style code.
     // here.
     double pos[3];
     vertex.XYZ(pos);
@@ -62,10 +62,9 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
                                     TH2F& hist)
 {
   // Note that we do not dereference the ValidHandle -- vertices_h is
-  // a ValidHandle<vector<recob::Vertex>>. We will need the handle to
+  // a ValidHandle<vector<Vertex>>. We will need the handle to
   // form the smart query object below.
-  auto const vertices_h =
-    ev.getValidHandle<vector<recob::Vertex>>(vertices_tag);
+  auto const vertices_h = ev.getValidHandle<vector<Vertex>>(vertices_tag);
 
   // We loop over each vertex, and for each vertex loop over all
   // associated clusters. We have to use an indexec for loop so that
@@ -75,12 +74,12 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
   // a Vertex and Cluster has an associated datum of type 'unsigned
   // short'. Consult the documentation of the LArSoft data model to
   // determine what that datum means!
-  FindMany<recob::Cluster, unsigned short> clusters_for_vertex(
+  FindMany<Cluster, unsigned short> clusters_for_vertex(
     vertices_h, ev, assns_tag);
 
   for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
     // We will fill this histogram once for each vertex.
-    vector<recob::Cluster const*> clusters;
+    vector<Cluster const*> clusters;
     clusters_for_vertex.get(i, clusters);
     float adc_sum = 0.0f;
     for (auto pcluster : clusters) {
@@ -96,14 +95,13 @@ analyze_cluster_hit_correlations(gallery::Event const& ev,
                                  InputTag const& assns_tag,
                                  TH2F& hist)
 {
-  auto const clusters_h =
-    ev.getValidHandle<vector<recob::Cluster>>(clusters_tag);
-  FindMany<recob::Hit> hits_for_cluster(clusters_h, ev, assns_tag);
+  auto const clusters_h = ev.getValidHandle<vector<Cluster>>(clusters_tag);
+  FindMany<Hit> hits_for_cluster(clusters_h, ev, assns_tag);
 
   for (size_t i = 0, sz = clusters_h->size(); i != sz; ++i) {
     auto const& cluster = (*clusters_h)[i];
     // We will fill this histogram once for each cluster.
-    vector<recob::Hit const*> hits;
+    vector<Hit const*> hits;
     hits_for_cluster.get(i, hits);
     float adc = cluster.SummedADC();
     float summed_integrals = 0.0f;
