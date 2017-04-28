@@ -113,7 +113,6 @@ main(int argc, char** argv) try {
        << elapsed_time.count() << " milliseconds\n";
 
   histfile.Write();
-  histfile.Close();
 } catch (std::exception const& ex) {
   std::cerr << ex.what() << '\n';
   return 1;
