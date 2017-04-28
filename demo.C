@@ -31,7 +31,8 @@ demo(std::string const& filename)
     new TH1F("npart", "Number of particles per MCTruth", 51, -0.5, 50.5);
 
   auto start_time = system_clock::now();
-  vector<microseconds> times; // we'll record the time for each event.
+  // We'll record the time it takes to process each gallery::Event.
+  vector<microseconds> times;
 
   for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
     auto const t0 = system_clock::now();
