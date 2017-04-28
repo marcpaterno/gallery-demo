@@ -23,22 +23,27 @@
 
 # Adjust the next line, if necessary, to reflect the location into
 # which you have installed the products.
-if [ ! -f /products/setup ]
+PRODUCTS_DIRECTORY="${HOME}/products"
+if [ ! -f "${PRODUCTS_DIRECTORY}/setup" ]
 then
-  echo "You do not have the UPS products installed under /products; please"
-  echo "edit this script to reflect the location of your UPS products installation."
+  echo "You do not have the UPS products installed under ${PRODUCTS_DIRECTORY}"
+  echo "Please edit this script to reflect the location of your UPS products."
   return 1
+else
+  source "${PRODUCTS_DIRECTORY}/setup"
 fi
 
-# Replace the following with whatever is necessary to make UPS
-# available on your system. If your experiment has a setup script,
-# that is probably the right thing to use here.
-source /products/setup
-
 # The following setup assumes you want the specified version of the dunetpc
-# software.
-# You should replace it with whatever product and version is appropriate for
-# your experiment. If your experiment has a setup script that you have used
-# above, you probably don't need to do this at all.
-setup dunetpc v06_33_00 -q e14:prof
+# software.  You should replace it with whatever product and version is
+# appropriate for your experiment. If your experiment has a setup script that
+# you have used above, you probably don't need to do this at all. If your
+# experiment setup already sets up gallery, you don't need to do (and should not
+# do) the gallery setup again. Please note the use of the -B option, and the '+'
+# modifiers in the arguments of the -q option. These are used to assure we can
+# diagnose an inconsistency between what products you might already have setup,
+# the experiment environment you setup, and the qualified version of gallery you
+# setup. Forming the regulary habit of using these options is recommended
+# practice, because it is best to diagnose incompatibilities before they cause
+# compilation failures, linkining failures, or runtime failures.
+setup -B dunetpc v06_33_00_01 -q +e14:+prof
 setup -B gallery v1_03_12 -q +e14:+prof:+nu
