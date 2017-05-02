@@ -16,3 +16,4 @@ rules.ninja
 cmake_install.cmake
 gallerydemo.cbp
 Makefile
+*.h5

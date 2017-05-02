@@ -12,14 +12,12 @@
 using namespace art;
 using namespace recob;
 using namespace std;
-
-#include "TH1F.h"
-#include "TH2F.h"
+using namespace hdfstudy::hdf5;
 
 void
 analyze_mctruths(gallery::Event const& ev,
                  InputTag const& mctruths_tag,
-                 TH1F& hist)
+                 Ntuple<int>& nt)
 {
   // getValidHandle() is preferred to getByLabel(), for both art and
   // gallery use. It does not require in-your-face error handling. We
@@ -27,19 +25,16 @@ analyze_mctruths(gallery::Event const& ev,
   // reference to the underlying data product.
   auto const& mctruths =
     *ev.getValidHandle<vector<simb::MCTruth>>(mctruths_tag);
-
   for (auto const& mctruth : mctruths) {
-    hist.Fill(mctruth.NParticles());
+    auto n = mctruth.NParticles();
+    nt.insert(&n);
   }
 }
 
 void
 analyze_vertices(gallery::Event const& ev,
                  InputTag const& vertices_tag,
-                 TH1F& xhist,
-                 TH1F& yhist,
-                 TH1F& zhist,
-                 TH2F& xyhist)
+                 Ntuple<double, double, double>& nt)
 {
   auto const& vertices = *ev.getValidHandle<vector<Vertex>>(vertices_tag);
 
@@ -48,10 +43,7 @@ analyze_vertices(gallery::Event const& ev,
     // here.
     double pos[3];
     vertex.XYZ(pos);
-    xhist.Fill(pos[0]);
-    yhist.Fill(pos[1]);
-    zhist.Fill(pos[2]);
-    xyhist.Fill(pos[0], pos[1]);
+    nt.insert(pos, pos+1, pos+2);
   }
 }
 
@@ -59,7 +51,7 @@ void
 analyze_vertex_cluster_correlations(gallery::Event const& ev,
                                     InputTag const& vertices_tag,
                                     InputTag const& assns_tag,
-                                    TH2F& hist)
+                                    Ntuple<unsigned int, size_t, float>& nt)
 {
   // Note that we do not dereference the ValidHandle -- vertices_h is
   // a ValidHandle<vector<Vertex>>. We will need the handle to
@@ -77,15 +69,17 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
   FindMany<Cluster, unsigned short> clusters_for_vertex(
     vertices_h, ev, assns_tag);
 
+  auto const& aux = ev.eventAuxiliary();
+  std::array<unsigned int, 3> const event_id { aux.run(), aux.subRun(), aux.event() };
+
   for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
     // We will fill this histogram once for each vertex.
     vector<Cluster const*> clusters;
     clusters_for_vertex.get(i, clusters);
-    float adc_sum = 0.0f;
-    for (auto pcluster : clusters) {
-      adc_sum += pcluster->SummedADC();
+        for (auto pcluster : clusters) {
+      auto sadc = pcluster->SummedADC();
+      nt.insert(event_id.data(), &i, &sadc);
     }
-    hist.Fill(clusters.size(), adc_sum);
   }
 }
 
@@ -93,21 +87,23 @@ void
 analyze_cluster_hit_correlations(gallery::Event const& ev,
                                  InputTag const& clusters_tag,
                                  InputTag const& assns_tag,
-                                 TH2F& hist)
+                                 Ntuple<unsigned int, size_t, float>& nt)
 {
   auto const clusters_h = ev.getValidHandle<vector<Cluster>>(clusters_tag);
   FindMany<Hit> hits_for_cluster(clusters_h, ev, assns_tag);
 
+  auto const& aux = ev.eventAuxiliary();
+  std::array<unsigned int, 3> const event_id { aux.run(), aux.subRun(), aux.event() };
+  auto const& clusters = *clusters_h;
+
   for (size_t i = 0, sz = clusters_h->size(); i != sz; ++i) {
-    auto const& cluster = (*clusters_h)[i];
+    auto const& cluster = clusters[i];
     // We will fill this histogram once for each cluster.
     vector<Hit const*> hits;
     hits_for_cluster.get(i, hits);
-    float adc = cluster.SummedADC();
-    float summed_integrals = 0.0f;
     for (auto phit : hits) {
-      summed_integrals += phit->Integral();
+      auto integral = phit->Integral();
+      nt.insert(event_id.data(), &i, &integral);
     }
-    hist.Fill(adc, summed_integrals);
   }
 }

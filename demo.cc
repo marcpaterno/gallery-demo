@@ -7,9 +7,8 @@
 #include "canvas/Utilities/InputTag.h"
 #include "gallery/Event.h"
 
-#include "TFile.h"
-#include "TH1F.h"
-#include "TH2F.h"
+#include "hdfstudy/hdf5/File.hpp"
+#include "hdfstudy/hdf5/Ntuple.hpp"
 
 #include "analyze.hh"
 
@@ -21,6 +20,8 @@
 using namespace art;
 using namespace std;
 using namespace std::chrono;
+using namespace std::string_literals;
+using namespace hdfstudy::hdf5;
 
 // We use a function try block to catch and report on all exceptions.
 int
@@ -47,40 +48,12 @@ main(int argc, char** argv) try {
   InputTag const vertex_cluster_assns("linecluster");
   InputTag const cluster_hit_assns("linecluster");
 
-  // ROOT indicates a problem with construction by setting the 'zombie
-  // bit', and so we'll be careful to test that -- so as not to cause
-  // a confusing problem later on if some contructor fails.
-  TFile histfile("histfile.root", "RECREATE");
-  if (histfile.IsZombie()) {
-    cerr << "Unable to open 'histfile.root, exiting...'\n";
-    return 1;
-  }
-
-  // These are the histograms we will be filling.
-  TH1F nparticles_hist(
-    "nparticles", "Number of particles per MCTruth", 51, -0.5, 50.5);
-  TH1F xhist("vertex_x", "x location of vertex", 50, -400., 400.);
-  TH1F yhist("vertex_y", "y location of vertex", 50, -600., 600.);
-  TH1F zhist("vertex_z", "z location of vertex", 50, 0., 1400.);
-  TH2F xyhist(
-    "vertex_xy", "x vs. y for each vertex", 20, -400., 400., 20, -600., 600.);
-
-  TH2F nclus_vs_adc_sum("nclus_vs_adc_sum",
-                        "number of clusters vs. ADC sum",
-                        30,
-                        0.,
-                        30.,
-                        20,
-                        4000.,
-                        140000.);
-  TH2F adc_vs_summed_integrals("adc_vs_summed_integrals",
-                               "cluster ADC vs sum of hit integrals",
-                               20,
-                               0.,
-                               6000.,
-                               20,
-                               0.,
-                               6000.);
+  // Make some ntuples to store our tabular data.
+  File hdffile("demo.h5", H5F_ACC_TRUNC);
+  Ntuple<int> mctruths(hdffile, "mctruths"s, { "nparticles"s });
+  Ntuple<double, double, double> vertices(hdffile, "vertices"s, {"x"s,"y"s,"z"s});
+  Ntuple<unsigned int, size_t, float> clusters(hdffile, "clusters"s, {{"eid"s, 3}, "vtx"s, "sumadc"s});
+  Ntuple<unsigned int, size_t, float> hits(hdffile, "hits"s, {{"eid"s, 3}, "clus"s,"integral"s});
 
   // The gallery::Event object acts as a cursor into the stream of
   // events.  A newly-constructed gallery::Event is at the start if
@@ -93,12 +66,10 @@ main(int argc, char** argv) try {
 
   for (gallery::Event ev(filenames); !ev.atEnd(); ev.next()) {
     auto const t0 = system_clock::now();
-    analyze_mctruths(ev, mctruths_tag, nparticles_hist);
-    analyze_vertices(ev, vertices_tag, xhist, yhist, zhist, xyhist);
-    analyze_vertex_cluster_correlations(
-      ev, vertices_tag, vertex_cluster_assns, nclus_vs_adc_sum);
-    analyze_cluster_hit_correlations(
-      ev, clusters_tag, cluster_hit_assns, adc_vs_summed_integrals);
+    analyze_mctruths(ev, mctruths_tag, mctruths);
+    analyze_vertices(ev, vertices_tag, vertices);
+    analyze_vertex_cluster_correlations(ev, vertices_tag, vertex_cluster_assns, clusters);
+    analyze_cluster_hit_correlations(ev, clusters_tag, cluster_hit_assns, hits);
     times.push_back(duration_cast<microseconds>(system_clock::now() - t0));
   }
 
@@ -111,8 +82,6 @@ main(int argc, char** argv) try {
        << sum_times.count() / times.size() << " microseconds/event\n";
   cout << "Total processing time (including file opening) was "
        << elapsed_time.count() << " milliseconds\n";
-
-  histfile.Write();
 } catch (std::exception const& ex) {
   std::cerr << ex.what() << '\n';
   return 1;
