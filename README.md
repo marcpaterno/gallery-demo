@@ -2,7 +2,6 @@
 
 This is the demonstration repository for `gallery`, a package for the reading of `art/ROOT` data files. Please see http://art.fnal.gov/gallery for an overview of `gallery`.
 
-
 ## When to use `gallery`
 
 `gallery` provides library (as opposed to framework) facilities for reading (not writing) event data from _art_/ROOT data files. As such, it is suitable for making programs that perform tasks that do not require the full set of features of the _art_ framework. Such tasks include things like reading event data to create histograms or ntuples.
@@ -19,7 +18,7 @@ However, `gallery` is not a full-featured framework. In fact, it is not a framew
 
 There are three different demonstration codes, listed below. Building and use of each requires the right environment be established. Specifically, an appropriate version of the UPS product `gallery` must be available, and ROOT dictionaries for the classes corresponding to objects in the file to be processed must be available. All this is usually established by "setting up" your experiment's software environment, using whatever setup scripts are provided by your experiment. The file `demo-setup` in this repository is an example setup script, which assumes that one has available a specific version of the `larsoftobj` distribution bundle. Please consult the instructions within that file for additional instructions.
 
-The main source code for the three demonstration programs are `demo.cc`, `demo.C`, and `demo.py`. The compiled C++ program is the most complete.
+The main source code for the three demonstration programs are `demo.cc`, `demo.C`, and `demo.py`. The compiled C++ program (`demo.cc`) is the most complete.
 
 ### `demo.cc`
 

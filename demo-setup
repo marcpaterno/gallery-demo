@@ -45,5 +45,16 @@ fi
 # setup. Forming the regulary habit of using these options is recommended
 # practice, because it is best to diagnose incompatibilities before they cause
 # compilation failures, linkining failures, or runtime failures.
-setup -B dunetpc v06_33_00_01 -q +e14:+prof
-setup -B gallery v1_03_12 -q +e14:+prof:+nu
+#
+# setup -B dunetpc v06_33_00_01 -q +e14:+prof
+# setup -B gallery v1_03_12 -q +e14:+prof:+nu
+
+# The following setup assumes you want the specified version of the
+# larsoftobj distribution bundle. larsoftobj contains all the data
+# products that are part of LArSoft, but none of the algorithmic
+# code. It is the smallest system that is able to read all
+# LArSoft-related art/ROOT data files. Setting up larsoftobj also sets
+# up the appropriate version of the gallery product. The gallery demo
+# is built using CMake, so you'll need a recent version of CMake.
+setup -B larsoftobj v1_19_01 -q +e14:+prof
+setup -B cmake v3_7_1
