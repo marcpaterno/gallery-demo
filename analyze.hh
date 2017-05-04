@@ -4,27 +4,27 @@
 #include "canvas/Utilities/InputTag.h"
 #include "gallery/Event.h"
 
-#include "hdfstudy/hdf5/Ntuple.hpp"
+#include "ntuple_types.hh"
 
 void
 analyze_mctruths(gallery::Event const& ev,
                  art::InputTag const& mctruth_tag,
-                 hdfstudy::hdf5::Ntuple<int>& nt);
+                 mctruth_nt_t& nt);
 
 void
 analyze_vertices(gallery::Event const& ev,
                  art::InputTag const& vertices_tag,
-                 hdfstudy::hdf5::Ntuple<double,double,double>& nt);
+                 vertex_nt_t& nt);
 
 void
 analyze_vertex_cluster_correlations(gallery::Event const& ev,
                                     art::InputTag const& vertices_tag,
                                     art::InputTag const& assns_tag,
-                                    hdfstudy::hdf5::Ntuple<unsigned int, size_t,float>& nt);
+                                    cluster_nt_t& nt);
 
 void
 analyze_cluster_hit_correlations(gallery::Event const& ev,
                                  art::InputTag const& clusters_tag,
                                  art::InputTag const& assns_tag,
-                                 hdfstudy::hdf5::Ntuple<unsigned int, size_t,float>& nt);
+                                 hit_nt_t& nt);
 #endif

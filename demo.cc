@@ -8,7 +8,7 @@
 #include "gallery/Event.h"
 
 #include "hdfstudy/hdf5/File.hpp"
-#include "hdfstudy/hdf5/Ntuple.hpp"
+#include "ntuple_types.hh"
 
 #include "analyze.hh"
 
@@ -50,10 +50,12 @@ main(int argc, char** argv) try {
 
   // Make some ntuples to store our tabular data.
   File hdffile("demo.h5", H5F_ACC_TRUNC);
-  Ntuple<int> mctruths(hdffile, "mctruths"s, { "nparticles"s });
-  Ntuple<double, double, double> vertices(hdffile, "vertices"s, {"x"s,"y"s,"z"s});
-  Ntuple<unsigned int, size_t, float> clusters(hdffile, "clusters"s, {{"eid"s, 3}, "vtx"s, "sumadc"s});
-  Ntuple<unsigned int, size_t, float> hits(hdffile, "hits"s, {{"eid"s, 3}, "clus"s,"integral"s});
+  mctruth_nt_t mctruths(hdffile, "mctruths", { { "eid", 3 }, "nparticles" });
+  vertex_nt_t vertices(
+    hdffile, "vertices", { { "eid", 3 }, "id", "x", "y", "z" });
+  cluster_nt_t clusters(
+    hdffile, "clusters", { { "eid", 3 }, "id", "vtx", "sumadc" });
+  hit_nt_t hits(hdffile, "hits", { { "eid", 3 }, "id", "clus", "integral" });
 
   // The gallery::Event object acts as a cursor into the stream of
   // events.  A newly-constructed gallery::Event is at the start if
@@ -68,7 +70,8 @@ main(int argc, char** argv) try {
     auto const t0 = system_clock::now();
     analyze_mctruths(ev, mctruths_tag, mctruths);
     analyze_vertices(ev, vertices_tag, vertices);
-    analyze_vertex_cluster_correlations(ev, vertices_tag, vertex_cluster_assns, clusters);
+    analyze_vertex_cluster_correlations(
+      ev, vertices_tag, vertex_cluster_assns, clusters);
     analyze_cluster_hit_correlations(ev, clusters_tag, cluster_hit_assns, hits);
     times.push_back(duration_cast<microseconds>(system_clock::now() - t0));
   }

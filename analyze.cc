@@ -14,11 +14,21 @@ using namespace recob;
 using namespace std;
 using namespace hdfstudy::hdf5;
 
+// Return an array of unsigned int, carrying the elements of the
+// EventID for the given gallery::Event.
+inline std::array<unsigned int, 3>
+get_eid(gallery::Event const& ev)
+{
+  auto const& aux = ev.eventAuxiliary();
+  return { aux.run(), aux.subRun(), aux.event() };
+};
+
 void
 analyze_mctruths(gallery::Event const& ev,
                  InputTag const& mctruths_tag,
-                 Ntuple<int>& nt)
+                 mctruth_nt_t& nt)
 {
+  auto event_id = get_eid(ev);
   // getValidHandle() is preferred to getByLabel(), for both art and
   // gallery use. It does not require in-your-face error handling. We
   // immediately dereference the ValidHandle to obtain a (const)
@@ -26,24 +36,24 @@ analyze_mctruths(gallery::Event const& ev,
   auto const& mctruths =
     *ev.getValidHandle<vector<simb::MCTruth>>(mctruths_tag);
   for (auto const& mctruth : mctruths) {
-    auto n = mctruth.NParticles();
-    nt.insert(&n);
+    nt.insert(event_id.data(), static_cast<int>(mctruth.NParticles()));
   }
 }
 
 void
 analyze_vertices(gallery::Event const& ev,
                  InputTag const& vertices_tag,
-                 Ntuple<double, double, double>& nt)
+                 vertex_nt_t& nt)
 {
+  auto event_id = get_eid(ev);
   auto const& vertices = *ev.getValidHandle<vector<Vertex>>(vertices_tag);
 
-  for (auto const& vertex : vertices) {
+  for (size_t i = 0, sz = vertices.size(); i != sz; ++i) {
     // The interface to Vertex forces us to use C-style code.
     // here.
     double pos[3];
-    vertex.XYZ(pos);
-    nt.insert(pos, pos+1, pos+2);
+    vertices[i].XYZ(pos);
+    nt.insert(event_id.data(), static_cast<int>(i), pos[0], pos[1], pos[2]);
   }
 }
 
@@ -51,7 +61,7 @@ void
 analyze_vertex_cluster_correlations(gallery::Event const& ev,
                                     InputTag const& vertices_tag,
                                     InputTag const& assns_tag,
-                                    Ntuple<unsigned int, size_t, float>& nt)
+                                    cluster_nt_t& nt)
 {
   // Note that we do not dereference the ValidHandle -- vertices_h is
   // a ValidHandle<vector<Vertex>>. We will need the handle to
@@ -68,17 +78,16 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
   // determine what that datum means!
   FindMany<Cluster, unsigned short> clusters_for_vertex(
     vertices_h, ev, assns_tag);
-
-  auto const& aux = ev.eventAuxiliary();
-  std::array<unsigned int, 3> const event_id { aux.run(), aux.subRun(), aux.event() };
+  auto event_id = get_eid(ev);
 
   for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
     // We will fill this histogram once for each vertex.
     vector<Cluster const*> clusters;
     clusters_for_vertex.get(i, clusters);
-        for (auto pcluster : clusters) {
-      auto sadc = pcluster->SummedADC();
-      nt.insert(event_id.data(), &i, &sadc);
+    int n = static_cast<int>(i);
+    for (size_t i = 0, sz = clusters.size(); i != sz; ++i) {
+      nt.insert(
+        event_id.data(), static_cast<int>(i), n, clusters[i]->SummedADC());
     }
   }
 }
@@ -87,23 +96,23 @@ void
 analyze_cluster_hit_correlations(gallery::Event const& ev,
                                  InputTag const& clusters_tag,
                                  InputTag const& assns_tag,
-                                 Ntuple<unsigned int, size_t, float>& nt)
+                                 hit_nt_t& nt)
 {
   auto const clusters_h = ev.getValidHandle<vector<Cluster>>(clusters_tag);
   FindMany<Hit> hits_for_cluster(clusters_h, ev, assns_tag);
 
-  auto const& aux = ev.eventAuxiliary();
-  std::array<unsigned int, 3> const event_id { aux.run(), aux.subRun(), aux.event() };
+  auto event_id = get_eid(ev);
+
   auto const& clusters = *clusters_h;
 
   for (size_t i = 0, sz = clusters_h->size(); i != sz; ++i) {
+    int n = static_cast<int>(i);
     auto const& cluster = clusters[i];
     // We will fill this histogram once for each cluster.
     vector<Hit const*> hits;
     hits_for_cluster.get(i, hits);
-    for (auto phit : hits) {
-      auto integral = phit->Integral();
-      nt.insert(event_id.data(), &i, &integral);
+    for (size_t j = 0, hsz = hits.size(); j != hsz; ++j) {
+      nt.insert(event_id.data(), static_cast<int>(j), n, hits[j]->Integral());
     }
   }
 }
