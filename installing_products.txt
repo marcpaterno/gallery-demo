@@ -1,0 +1,17 @@
+If you need to install a bundle of products, you can use the pullProducts
+script to do so. An example of how to do that for larsoftobj version 1.19.01
+is shown below. Please use the product name and version appropriate for your
+experiment.
+
+    -- get the pullProducts script, and make it executable
+$ wget http://scisoft.fnal.gov/scisoft/bundles/tools/pullProducts
+$ chmod +x pullProducts
+
+    -- use pullProducts to install larsoftobj (and all of its dependencies)
+    -- under $HOME/products
+    -- Note that <platform> should be one of u14, u16, d14, d15, d16, slf6,
+       slf7
+An example use (appropriate for an SL7 machine, or a CentOS 7
+machine) would be:
+
+$ ./pullProducts $HOME/products slf7 larsoftobj-1.19.01 e14 prof
