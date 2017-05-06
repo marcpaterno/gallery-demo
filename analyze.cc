@@ -7,11 +7,14 @@
 #include "lardataobj/RecoBase/Vertex.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
+#include "range/v3/all.hpp"
+
 #include <vector>
 
 using namespace art;
 using namespace recob;
 using namespace std;
+using namespace ranges::v3;
 
 #include "TH1F.h"
 #include "TH2F.h"
@@ -25,12 +28,9 @@ analyze_mctruths(gallery::Event const& ev,
   // gallery use. It does not require in-your-face error handling. We
   // immediately dereference the ValidHandle to obtain a (const)
   // reference to the underlying data product.
-  auto const& mctruths =
-    *ev.getValidHandle<vector<simb::MCTruth>>(mctruths_tag);
-
-  for (auto const& mctruth : mctruths) {
-    hist.Fill(mctruth.NParticles());
-  }
+  ranges::for_each(*ev.getValidHandle<vector<simb::MCTruth>>(mctruths_tag) |
+                     view::transform(&simb::MCTruth::NParticles),
+                   [&hist](int n) { hist.Fill(n); });
 }
 
 void
@@ -41,18 +41,20 @@ analyze_vertices(gallery::Event const& ev,
                  TH1F& zhist,
                  TH2F& xyhist)
 {
-  auto const& vertices = *ev.getValidHandle<vector<Vertex>>(vertices_tag);
+  auto vertex_pos = [](auto const& vtx) {
+    std::array<double, 3> pos;
+    vtx.XYZ(pos.data());
+    return pos;
+  };
 
-  for (auto const& vertex : vertices) {
-    // The interface to Vertex forces us to use C-style code.
-    // here.
-    double pos[3];
-    vertex.XYZ(pos);
-    xhist.Fill(pos[0]);
-    yhist.Fill(pos[1]);
-    zhist.Fill(pos[2]);
-    xyhist.Fill(pos[0], pos[1]);
-  }
+  ranges::for_each(*ev.getValidHandle<vector<Vertex>>(vertices_tag) |
+                     view::transform(vertex_pos),
+                   [&](auto const& pos) {
+                     xhist.Fill(pos[0]);
+                     yhist.Fill(pos[1]);
+                     zhist.Fill(pos[2]);
+                     xyhist.Fill(pos[0], pos[1]);
+                   });
 }
 
 void
@@ -81,10 +83,8 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
     // We will fill this histogram once for each vertex.
     vector<Cluster const*> clusters;
     clusters_for_vertex.get(i, clusters);
-    float adc_sum = 0.0f;
-    for (auto pcluster : clusters) {
-      adc_sum += pcluster->SummedADC();
-    }
+    float adc_sum = ranges::accumulate(
+      clusters | view::transform(&recob::Cluster::SummedADC), 0.0f);
     hist.Fill(clusters.size(), adc_sum);
   }
 }
@@ -104,10 +104,8 @@ analyze_cluster_hit_correlations(gallery::Event const& ev,
     vector<Hit const*> hits;
     hits_for_cluster.get(i, hits);
     float adc = cluster.SummedADC();
-    float summed_integrals = 0.0f;
-    for (auto phit : hits) {
-      summed_integrals += phit->Integral();
-    }
+    float summed_integrals =
+      ranges::accumulate(hits | view::transform(&recob::Hit::Integral), 0.0f);
     hist.Fill(adc, summed_integrals);
   }
 }
