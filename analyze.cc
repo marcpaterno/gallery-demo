@@ -80,14 +80,15 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
     vertices_h, ev, assns_tag);
   auto event_id = get_eid(ev);
 
-  for (size_t i = 0, sz = vertices_h->size(); i != sz; ++i) {
+  for (size_t iv = 0, szv = vertices_h->size(); iv != szv; ++iv) {
     // We will fill this histogram once for each vertex.
     vector<Cluster const*> clusters;
-    clusters_for_vertex.get(i, clusters);
-    int n = static_cast<int>(i);
-    for (size_t i = 0, sz = clusters.size(); i != sz; ++i) {
-      nt.insert(
-        event_id.data(), static_cast<int>(i), n, clusters[i]->SummedADC());
+    clusters_for_vertex.get(iv, clusters);
+    for (size_t ic = 0, szc = clusters.size(); ic != szc; ++ic) {
+      nt.insert(event_id.data(),
+                static_cast<int>(ic),
+                static_cast<int>(iv),
+                clusters[ic]->SummedADC());
     }
   }
 }

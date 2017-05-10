@@ -34,7 +34,7 @@ Let's first explore the `hits` data.
 hits <- read.data.table(f,"hits")
 hits
 ```
-Printing a `data.table` shows the first few, and last few, rows in the table. In this table, we have one row per hit found in the events that were processed. The columns `eid.1`, `eid.2`, and `eid.3` are the run, subrun, and event numbers; together, these provide a unique identifier for the event in which the hit was found. The column `id` is a unique identifier of the hit within that event. The column `cluster` tells what cluster in that event is associated with this hit. Finally, `integral` is a measure of the amount of charge associated with the observed hit. The printout also shows a run number for each row. We can see from this that the table contains about 3.5 million hits.
+Printing a `data.table` shows the first few, and last few, rows in the table. In this table, we have one row per hit found in the events that were processed. The columns `eid.1`, `eid.2`, and `eid.3` are the run, subrun, and event numbers; together, these provide a unique identifier for the event in which the hit was found. The column `id` is a unique identifier of the hit within that event. The column `cluster` tells what cluster in that event is associated with this hit. Finally, `integral` is a measure of the amount of charge associated with the observed hit. The printout also shows a run number for each row. We can see from this that the table contains `r nrow(hits)` hits.
 
 First, let's look at the distribution of `integral`. There are many hits, so it is reasonable to first try a histogram as a density estimator:
 ```{r}
@@ -57,7 +57,9 @@ With this, we see our data cluster mostly between about 100 and 300, but there a
 
 Next we will look at what happens if we aggregate data event-by-event. First, let's look at the number of hits per event. We need to use the three columns that uniquely identify an event to group the data; we will also use the `data.table` facility `.N` to count the number of entries in the table (and thus hits) per event. The `[]` operator for the `data.table` provides the facility for doing the grouping, and also the calculation on the resulting groups.
 ```{r}
-histogram(~N, hits[, .N, .(eid.1,eid.2,eid.3)], nint = 50, type = "count",
+histogram(~N,
+          hits[, .N, .(eid.1,eid.2,eid.3)],
+          nint = 50, type = "count",
           scales = list(x = list(log = 10,equispaced = FALSE)),
           xlab="Number of hits per event")
 ```
@@ -65,7 +67,7 @@ It is useful to take a look at the `data.table` returned by the grouping operati
 ```{r}
 hits[,.N,.(eid.1,eid.2,eid.3)]
 ```
-The result has the columns we used to uniquely identify the events, and also the calculated column `N`, containing the number of hits in each event. We see there are 6330 events that have at least one hit (the file used for this study contained 10 thousand events, so more than one third had no hit).
+The result has the columns we used to uniquely identify the events, and also the calculated column `N`, containing the number of hits in each event. Note that in the data file we are reading, some events have no hits.
 
 ### Two-dimensional analyses
 
@@ -73,17 +75,20 @@ The `data.table` package provides facilities to merge (or join) tables, to allow
 ```{r}
 vertices <- read.data.table(f, "vertices")
 clusters <- read.data.table(f, "clusters")
-head(vertices)
-head(clusters)
+vertices
+clusters
 ```
-First, we need to add some _keys_ to the `data.table`s we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster.
+First, we need to add some _keys_ to the `data.table`s we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster. In the call to `merge`, the `by.x` and `by.y` arguments must be vectors of the same length; the order tells which column in _x_ is to be compared with which column in _y_.
+
+Note: because of the way our ntuples were constructed, we have included in the `clusters` table only those clusters that have associated vertices. We have included every vertex in the `vertices` table. Thus when we make the merged table, we will have the same number of rows as we have clusters.
 ```{r}
-v.keys <- c("eid.1","eid.2","eid.3","id")  # column names for keys in vertices table
-c.keys <- c("eid.1","eid.2","eid.3","vtx") # column names for keys in clusters table
-setkeyv(clusters, c.keys)
-setkeyv(vertices, v.keys)
-vc <- merge(clusters, vertices, by.x = c.keys, by.y = v.keys)
-head(vc)
+setkey(vertices, eid.1, eid.2, eid.3, id)
+setkey(clusters, eid.1, eid.2, eid.3, id, vtx)
+
+vc <- merge(clusters, vertices,
+            by.x = c("eid.1", "eid.2", "eid.3", "vtx"),
+            by.y = c("eid.1", "eid.2", "eid.3", "id"))
+vc
 ```
 In `vc`, the columns that provide the event identification are as we have seen before, the `vtx` column is an identifier for a vertex within that event, the `id` column is the identifier for a cluster within that vertex, `sumadc` is the sum of ADC counts for the cluster, and `x`,`y`, and `z` are the coordinates of the vertex.
 
@@ -94,10 +99,11 @@ The quantities for which we want to explore the correlations are the _number of 
         xlab = "Number of clusters",
         ylab = "Sum of SummedADC")
 ```
-The number of points plotted is not too large, but because the _x_-axis takes only integer values, there is significant overplotting. This can be reduced by _jittering_ the value plotted on the _x_-axis:
+The number of points plotted is not too large, but because the _x_-axis takes only integer values, there is significant overplotting. This can be reduced by _jittering_ the value plotted on the _x_-axis. We'll also switch to a log scale for the _y_ axis.
 ```{r}
  xyplot(adcsum~jitter(nclus),
         vc[, .(nclus=.N,adcsum=sum(sumadc)), .(eid.1,eid.2,eid.3,vtx)],
+        scales = list(y=list(log=10, equispaced=FALSE)),
         xlab = "Number of clusters",
         ylab = "Sum of SummedADC")
 ```
@@ -106,12 +112,13 @@ The number of points plotted is not too large, but because the _x_-axis takes on
 
 The scatterplot above works reasonably well in part because there are not too many points to be plotted. If the number of points is too large, a scatterplot becomes of little use. In such cases, it can be useful to use a kernel density estimator, and then to visualize the density estimate.
 
-In the next bit of analysis, we want to look at the relationship between hits and clusters. In particular, we want to see how the clusters' summed ADCs compares with the sum of the integrals for all the hits in the cluster. First, we must form the correct merged `data.table`.
+In the next bit of analysis, we want to look at the relationship between hits and clusters. In particular, we want to see how the clusters' summed ADCs compares with the sum of the integrals for all the hits in the cluster. First, we must form the correct merged `data.table`. We already have the correct key in the `clusters` table; we need to add one for the `hits` table.
+
+Note that the `hits` table includes hits that were included in no cluster. Thus we will end up with a merge table that contains a row for each hit _if that hit was included in some cluster_. This will leave many hits missing from the merge table.
 ```{r}
-h.keys <- c("eid.1","eid.2","eid.3","clus")
-c.keys <- c("eid.1","eid.2","eid.3","id")
-setkeyv(hits, h.keys)
-setkeyv(clusters, c.keys)
-hc <- merge(clusters, hits, by.x = c.keys, by.y = h.keys)
+setkey(hits, eid.1, eid.2, eid.3, id, clus)
+hc <- merge(clusters, hits,
+            by.x = c("eid.1","eid.2","eid.3","id"),
+            by.y = c("eid.1","eid.2","eid.3","clus"))
 hc
 ```
