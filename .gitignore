@@ -17,3 +17,5 @@ cmake_install.cmake
 gallerydemo.cbp
 Makefile
 *.h5
+UsingRgallery.md
+UsingRgallery_files/

@@ -1,0 +1,117 @@
+---
+title: "Using rgallery for physics analysis"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rgallery)
+library(latticeExtra)
+library(h5)
+library(data.table)
+```
+
+## Introducing `rgallery`
+ 
+ `rgallery` is a small R package that provides some functions that make it easy to read HDF5 ntuple files (as written by `hep_hpc`, from https://bitbucket.org/fnalscdcomputationalscience/hep_hpc). It allows ntuples in those files to be read into an R `data.table` or `data.frame`. This introduction concentrates on the us of `data.frame`.
+ 
+## Obtaining `rgallery`
+
+The `rgallery` package can be installed using `devtools::install_github`. See https://github.com/marcpaterno/rgallery for more about installation.
+
+## Example of use
+
+For this example, we use a HDF5 ntuple file containing some information about clusters, hits, and vertices found in simulation of DUNE data. Thanks to the DUNE collaboration for allowing access to their simulation output.
+
+```{r}
+f <- h5file("demo.h5","r") # Open the file in readonly mode
+f                          # printing the file handle shows us the table names
+```
+### Exploration of one-dimensional data
+
+Let's first explore the `hits` data.
+```{r}
+hits <- read.data.table(f,"hits")
+hits
+```
+Printing a `data.table` shows the first few, and last few, rows in the table. In this table, we have one row per hit found in the events that were processed. The columns `eid.1`, `eid.2`, and `eid.3` are the run, subrun, and event numbers; together, these provide a unique identifier for the event in which the hit was found. The column `id` is a unique identifier of the hit within that event. The column `cluster` tells what cluster in that event is associated with this hit. Finally, `integral` is a measure of the amount of charge associated with the observed hit. The printout also shows a run number for each row. We can see from this that the table contains about 3.5 million hits.
+
+First, let's look at the distribution of `integral`. There are many hits, so it is reasonable to first try a histogram as a density estimator:
+```{r}
+# nint tells the number of bins to use.
+# type="count" gives a plot showing the number of entries
+#   (rather than the default relative frequency)
+histogram(~integral, hits, nint=50, type="count")
+```
+That's rather disappointing. Almost all the data fall into two bins. The bins to up to about 50 thousand, indicating that some values are very high, but their number is small and we can't really see their distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
+```{r}
+histogram(~integral, hits, nint=50, type="count",
+          scales = list(x = list(log = 10, equispaced = FALSE)))
+```
+From this, we start to see some shape in the distribution. The lower end of the distribution does not actually go to zero, and we begin to see some of the shape of the distribution. The tails are very large. A better tool for visualization such data may be the [box and whisker plot](https://en.wikipedia.org/wiki/Box_plot).
+```{r}
+bwplot(~integral, hits,
+       scales = list(x = list(log = 10, equispaced = FALSE)))
+```
+With this, we see our data cluster mostly between about 100 and 300, but there are large tails, and even perhaps some structure at the low end of the distribution.
+
+Next we will look at what happens if we aggregate data event-by-event. First, let's look at the number of hits per event. We need to use the three columns that uniquely identify an event to group the data; we will also use the `data.table` facility `.N` to count the number of entries in the table (and thus hits) per event. The `[]` operator for the `data.table` provides the facility for doing the grouping, and also the calculation on the resulting groups.
+```{r}
+histogram(~N, hits[, .N, .(eid.1,eid.2,eid.3)], nint = 50, type = "count",
+          scales = list(x = list(log = 10,equispaced = FALSE)),
+          xlab="Number of hits per event")
+```
+It is useful to take a look at the `data.table` returned by the grouping operation:
+```{r}
+hits[,.N,.(eid.1,eid.2,eid.3)]
+```
+The result has the columns we used to uniquely identify the events, and also the calculated column `N`, containing the number of hits in each event. We see there are 6330 events that have at least one hit (the file used for this study contained 10 thousand events, so more than one third had no hit).
+
+### Two-dimensional analyses
+
+The `data.table` package provides facilities to merge (or join) tables, to allow us to look at relations between quantities in different tables. Next we will look at the relationship between the number of clusters associated with a vertex and the sum of the summed ADCs for the clusters in that vertex. This requires using information from both the `vertices` and `clusters` tables, making sure that we associate each cluster with the right vertex.
+```{r}
+vertices <- read.data.table(f, "vertices")
+clusters <- read.data.table(f, "clusters")
+head(vertices)
+head(clusters)
+```
+First, we need to add some _keys_ to the `data.table`s we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster.
+```{r}
+v.keys <- c("eid.1","eid.2","eid.3","id")  # column names for keys in vertices table
+c.keys <- c("eid.1","eid.2","eid.3","vtx") # column names for keys in clusters table
+setkeyv(clusters, c.keys)
+setkeyv(vertices, v.keys)
+vc <- merge(clusters, vertices, by.x = c.keys, by.y = v.keys)
+head(vc)
+```
+In `vc`, the columns that provide the event identification are as we have seen before, the `vtx` column is an identifier for a vertex within that event, the `id` column is the identifier for a cluster within that vertex, `sumadc` is the sum of ADC counts for the cluster, and `x`,`y`, and `z` are the coordinates of the vertex.
+
+The quantities for which we want to explore the correlations are the _number of clusters per vertex_ and _the sum of the ADC counts for all clusters in the vertex_. To get these, we summarize the dataset:
+```{r}
+ xyplot(adcsum~nclus,
+        vc[, .(nclus=.N,adcsum=sum(sumadc)), .(eid.1,eid.2,eid.3,vtx)],
+        xlab = "Number of clusters",
+        ylab = "Sum of SummedADC")
+```
+The number of points plotted is not too large, but because the _x_-axis takes only integer values, there is significant overplotting. This can be reduced by _jittering_ the value plotted on the _x_-axis:
+```{r}
+ xyplot(adcsum~jitter(nclus),
+        vc[, .(nclus=.N,adcsum=sum(sumadc)), .(eid.1,eid.2,eid.3,vtx)],
+        xlab = "Number of clusters",
+        ylab = "Sum of SummedADC")
+```
+
+### Two-dimensional analysis of a larger data set.
+
+The scatterplot above works reasonably well in part because there are not too many points to be plotted. If the number of points is too large, a scatterplot becomes of little use. In such cases, it can be useful to use a kernel density estimator, and then to visualize the density estimate.
+
+In the next bit of analysis, we want to look at the relationship between hits and clusters. In particular, we want to see how the clusters' summed ADCs compares with the sum of the integrals for all the hits in the cluster. First, we must form the correct merged `data.table`.
+```{r}
+h.keys <- c("eid.1","eid.2","eid.3","clus")
+c.keys <- c("eid.1","eid.2","eid.3","id")
+setkeyv(hits, h.keys)
+setkeyv(clusters, c.keys)
+hc <- merge(clusters, hits, by.x = c.keys, by.y = h.keys)
+hc
+```
