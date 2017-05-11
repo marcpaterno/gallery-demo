@@ -7,7 +7,7 @@
 #include "canvas/Utilities/InputTag.h"
 #include "gallery/Event.h"
 
-#include "hdfstudy/hdf5/File.hpp"
+#include "hep_hpc/hdf5/File.hpp"
 #include "ntuple_types.hh"
 
 #include "analyze.hh"
@@ -21,7 +21,7 @@ using namespace art;
 using namespace std;
 using namespace std::chrono;
 using namespace std::string_literals;
-using namespace hdfstudy::hdf5;
+using namespace hep_hpc::hdf5;
 
 // We use a function try block to catch and report on all exceptions.
 int

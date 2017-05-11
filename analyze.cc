@@ -12,7 +12,7 @@
 using namespace art;
 using namespace recob;
 using namespace std;
-using namespace hdfstudy::hdf5;
+using namespace hep_hpc::hdf5;
 
 // Return an array of unsigned int, carrying the elements of the
 // EventID for the given gallery::Event.
