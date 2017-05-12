@@ -55,4 +55,4 @@ setup -B gallery v1_03_12 -q +e14:+prof:+nu
 # version of CMake.
 
 setup -B cmake v3_7_1
-setup -B hep_hpc v0_01_01 -q +e14:+prof
+setup -B hep_hpc v0_01_01a -q +e14:+prof
