@@ -81,7 +81,6 @@ analyze_vertex_cluster_correlations(gallery::Event const& ev,
   auto event_id = get_eid(ev);
 
   for (size_t iv = 0, szv = vertices_h->size(); iv != szv; ++iv) {
-    // We will fill this histogram once for each vertex.
     vector<Cluster const*> clusters;
     clusters_for_vertex.get(iv, clusters);
     for (size_t ic = 0, szc = clusters.size(); ic != szc; ++ic) {
@@ -109,11 +108,16 @@ analyze_cluster_hit_correlations(gallery::Event const& ev,
   for (size_t i = 0, sz = clusters_h->size(); i != sz; ++i) {
     int n = static_cast<int>(i);
     auto const& cluster = clusters[i];
-    // We will fill this histogram once for each cluster.
     vector<Hit const*> hits;
     hits_for_cluster.get(i, hits);
     for (size_t j = 0, hsz = hits.size(); j != hsz; ++j) {
-      nt.insert(event_id.data(), static_cast<int>(j), n, hits[j]->Integral());
+      auto const& hit = *hits[j];
+      nt.insert(event_id.data(),
+                static_cast<int>(j),
+                n,
+                hit.Integral(),
+                hit.GoodnessOfFit(),
+                hit.DegreesOfFreedom());
     }
   }
 }

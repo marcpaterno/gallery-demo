@@ -47,7 +47,7 @@ First, let's look at the distribution of `integral`. There are many hits, so it 
 histogram(~integral, hits, nint=50, type="count")
 ```
 
-That's rather disappointing. Almost all the data fall into two bins. The bins to up to about 50 thousand, indicating that some values are very high, but their number is small and we can't really see their distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
+That's rather disappointing. Almost all the data fall into two bins. The bins go to up to about 50 thousand, indicating that some values are very high, but their content is small and we can't really see their distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
 ```{r}
 histogram(~integral, hits, nint=50, type="count",
           scales = list(x = list(log = 10, equispaced = FALSE)))
@@ -152,7 +152,7 @@ histogram(~(sumadc/sumint),
           hc[,.(sumadc=first(sumadc), sumint=sum(integral)),.(eid.1,eid.2,eid.3,id)],
           nint=100,
           scales=list(x=list(log=10, equispaced=FALSE)),
-          type="c")
+          type = "c")
 ```
 
 Another possibility is to visualize a 2-d kernel density estimate:
@@ -162,3 +162,13 @@ hc.dens <- kde2d(log10(hc.summary$sumadc), log10(hc.summary$sumint))
 image(hc.dens, xlab="log(sumadc)", ylab="log(sum of integral)")
 contour(hc.dens, add=TRUE)
 ```
+
+The final thing we will consider is grouping the data, by "goodness of fit" (`gof`).
+```{r}
+hc$gofbin <- cut(hc$gof, breaks=c(-1, 0, 10, 100, 1000, 10000), include.lowest=TRUE)
+summary(hc$gofbin)
+```
+We can now try making a plot conditioned on the value of `gofbin`. This time, we'll use a histogram showing relative frequency. Otherwise, because the number of counts in the `(0,10]` bin is so large that we will not see much for the other bins.
+```{r}
+histogram(~integral|gofbin, hc[integral>0.01], nint = 30,
+          scales = list(x = list(log = 10, equispaced = FALSE)))

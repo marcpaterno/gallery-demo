@@ -55,7 +55,8 @@ main(int argc, char** argv) try {
     hdffile, "vertices", { { "eid", 3 }, "id", "x", "y", "z" });
   cluster_nt_t clusters(
     hdffile, "clusters", { { "eid", 3 }, "id", "vtx", "sumadc" });
-  hit_nt_t hits(hdffile, "hits", { { "eid", 3 }, "id", "clus", "integral" });
+  hit_nt_t hits(
+    hdffile, "hits", { { "eid", 3 }, "id", "clus", "integral", "gof", "dof" });
 
   // The gallery::Event object acts as a cursor into the stream of
   // events.  A newly-constructed gallery::Event is at the start if
