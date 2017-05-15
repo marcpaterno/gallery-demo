@@ -19,3 +19,4 @@ Makefile
 *.h5
 UsingRgallery.md
 UsingRgallery_files/
+UsingRgallery_cache/

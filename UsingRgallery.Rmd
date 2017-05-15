@@ -24,7 +24,7 @@ The `rgallery` package can be installed using `devtools::install_github`. See ht
 
 For this example, we use a HDF5 ntuple file containing some information about clusters, hits, and vertices found in simulation of DUNE data. Thanks to the DUNE collaboration for allowing access to their simulation output.
 
-```{r}
+```{r, cache=TRUE}
 f <- h5file("demo.h5","r") # Open the file in readonly mode
 f                          # printing the file handle shows us the table names
 ```
@@ -32,7 +32,7 @@ f                          # printing the file handle shows us the table names
 ### Exploration of one-dimensional data
 
 Let's first explore the `hits` data.
-```{r}
+```{r,cache=TRUE}
 hits <- read.data.table(f,"hits")
 hits
 ```
@@ -40,7 +40,7 @@ hits
 Printing a `data.table` shows the first few, and last few, rows in the table. In this table, we have one row per hit found in the events that were processed. The columns `eid.1`, `eid.2`, and `eid.3` are the run, subrun, and event numbers; together, these provide a unique identifier for the event in which the hit was found. The column `id` is a unique identifier of the hit within that event. The column `cluster` tells what cluster in that event is associated with this hit. Finally, `integral` is a measure of the amount of charge associated with the observed hit. The printout also shows a run number for each row. We can see from this that the table contains `r nrow(hits)` hits.
 
 First, let's look at the distribution of `integral`. There are many hits, so it is reasonable to first try a histogram as a density estimator:
-```{r}
+```{r,cache=TRUE}
 # nint tells the number of bins to use.
 # type="count" gives a plot showing the number of entries
 #   (rather than the default relative frequency)
@@ -48,13 +48,13 @@ histogram(~integral, hits, nint=50, type="count")
 ```
 
 That's rather disappointing. Almost all the data fall into two bins. The bins go to up to about 50 thousand, indicating that some values are very high, but their content is small and we can't really see their distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
-```{r}
+```{r,cache=TRUE}
 histogram(~integral, hits, nint=50, type="count",
           scales = list(x = list(log = 10, equispaced = FALSE)))
 ```
 
 From this, we start to see some shape in the distribution. The lower end of the distribution does not actually go to zero, and we begin to see some of the shape of the distribution. The tails are very large. A better tool for visualization such data may be the [box and whisker plot](https://en.wikipedia.org/wiki/Box_plot).
-```{r}
+```{r,cache=TRUE}
 bwplot(~integral, hits,
        scales = list(x = list(log = 10, equispaced = FALSE)))
 ```
@@ -62,7 +62,7 @@ bwplot(~integral, hits,
 With this, we see our data cluster mostly between about 100 and 300, but there are large tails, and even perhaps some structure at the low end of the distribution.
 
 Next we will look at what happens if we aggregate data event-by-event. First, let's look at the number of hits per event. We need to use the three columns that uniquely identify an event to group the data; we will also use the `data.table` facility `.N` to count the number of entries in the table (and thus hits) per event. The `[]` operator for the `data.table` provides the facility for doing the grouping, and also the calculation on the resulting groups.
-```{r}
+```{r,cache=TRUE}
 histogram(~N,
           hits[, .N, .(eid.1,eid.2,eid.3)],
           nint = 50, type = "count",
@@ -71,7 +71,7 @@ histogram(~N,
 ```
 
 It is useful to take a look at the `data.table` returned by the grouping operation:
-```{r}
+```{r,cache=TRUE}
 hits[,.N,.(eid.1,eid.2,eid.3)]
 ```
 
@@ -80,7 +80,7 @@ The result has the columns we used to uniquely identify the events, and also the
 ### Two-dimensional analyses
 
 The `data.table` package provides facilities to merge (or join) tables, to allow us to look at relations between quantities in different tables. Next we will look at the relationship between the number of clusters associated with a vertex and the sum of the summed ADCs for the clusters in that vertex. This requires using information from both the `vertices` and `clusters` tables, making sure that we associate each cluster with the right vertex.
-```{r}
+```{r,cache=TRUE}
 vertices <- read.data.table(f, "vertices")
 clusters <- read.data.table(f, "clusters")
 vertices
@@ -90,7 +90,7 @@ clusters
 First, we need to add some _keys_ to the `data.table`s we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster. In the call to `merge`, the `by.x` and `by.y` arguments must be vectors of the same length; the order tells which column in _x_ is to be compared with which column in _y_.
 
 Note: because of the way our ntuples were constructed, we have included in the `clusters` table only those clusters that have associated vertices. We have included every vertex in the `vertices` table. Thus when we make the merged table, we will have the same number of rows as we have clusters.
-```{r}
+```{r,cache=TRUE}
 setkey(vertices, eid.1, eid.2, eid.3, id)
 setkey(clusters, eid.1, eid.2, eid.3, id, vtx)
 
@@ -103,7 +103,7 @@ vc
 In `vc`, the columns that provide the event identification are as we have seen before, the `vtx` column is an identifier for a vertex within that event, the `id` column is the identifier for a cluster within that vertex, `sumadc` is the sum of ADC counts for the cluster, and `x`,`y`, and `z` are the coordinates of the vertex.
 
 The quantities for which we want to explore the correlations are the _number of clusters per vertex_ and _the sum of the ADC counts for all clusters in the vertex_. To get these, we summarize the dataset:
-```{r}
+```{r,cache=TRUE}
  xyplot(adcsum~nclus,
         vc[, .(nclus=.N,adcsum=sum(sumadc)), .(eid.1,eid.2,eid.3,vtx)],
         xlab = "Number of clusters",
@@ -111,7 +111,7 @@ The quantities for which we want to explore the correlations are the _number of 
 ```
 
 The number of points plotted is not too large, but because the _x_-axis takes only integer values, there is significant overplotting. This can be reduced by _jittering_ the value plotted on the _x_-axis. We'll also switch to a log scale for the _y_ axis.
-```{r}
+```{r,cache=TRUE}
  xyplot(adcsum~jitter(nclus),
         vc[, .(nclus=.N,adcsum=sum(sumadc)), .(eid.1,eid.2,eid.3,vtx)],
         scales = list(y=list(log=10, equispaced=FALSE)),
@@ -126,7 +126,7 @@ The scatterplot above works reasonably well in part because there are not too ma
 In the next bit of analysis, we want to look at the relationship between hits and clusters. In particular, we want to see how the clusters' summed ADCs compares with the sum of the integrals for all the hits in the cluster. First, we must form the correct merged `data.table`. We already have the correct key in the `clusters` table; we need to add one for the `hits` table.
 
 Note that the `hits` table includes hits that were included in no cluster. Thus we will end up with a merge table that contains a row for each hit _if that hit was included in some cluster_. This will leave many hits missing from the merge table.
-```{r}
+```{r,cache=TRUE}
 setkey(hits, eid.1, eid.2, eid.3, id, clus)
 hc <- merge(clusters, hits,
             by.x = c("eid.1","eid.2","eid.3","id"),
@@ -136,7 +136,7 @@ hc
 ```
 
 What we want to study is the relation between the `sumadc` for each cluster and the sum of `integral` for all the hits in that cluster.
-```{r}
+```{r,cache=TRUE}
 xyplot(sumadc~sumint,
        hc[, .(sumadc=first(sumadc), sumint=sum(integral)), .(eid.1,eid.2,eid.3,id)],
        xlab = "sum of integral for hits in cluster",
@@ -147,7 +147,7 @@ xyplot(sumadc~sumint,
 ```
 
 That is getting to be too many points to visualize with a scatterplot. We can try looking at a one-dimensional distribution of a derived quantity:
-```{r}
+```{r,cache=TRUE}
 histogram(~(sumadc/sumint),
           hc[,.(sumadc=first(sumadc), sumint=sum(integral)),.(eid.1,eid.2,eid.3,id)],
           nint=100,
@@ -156,7 +156,7 @@ histogram(~(sumadc/sumint),
 ```
 
 Another possibility is to visualize a 2-d kernel density estimate:
-```{r}
+```{r,cache=TRUE}
 hc.summary <- hc[,.(sumadc=first(sumadc), sumint=sum(integral)),.(eid.1,eid.2,eid.3,id)]
 hc.dens <- kde2d(log10(hc.summary$sumadc), log10(hc.summary$sumint))
 image(hc.dens, xlab="log(sumadc)", ylab="log(sum of integral)")
@@ -164,11 +164,11 @@ contour(hc.dens, add=TRUE)
 ```
 
 The final thing we will consider is grouping the data, by "goodness of fit" (`gof`).
-```{r}
-hc$gofbin <- cut(hc$gof, breaks=c(-1, 0, 10, 100, 1000, 10000), include.lowest=TRUE)
+```{r,cache=TRUE}
+hc[,gofbin:=(cut(gof, breaks = c(-1,0,10,100,1000,10000), include.lowest = TRUE))]
 summary(hc$gofbin)
 ```
 We can now try making a plot conditioned on the value of `gofbin`. This time, we'll use a histogram showing relative frequency. Otherwise, because the number of counts in the `(0,10]` bin is so large that we will not see much for the other bins.
-```{r}
+```{r,cache=TRUE}
 histogram(~integral|gofbin, hc[integral>0.01], nint = 30,
           scales = list(x = list(log = 10, equispaced = FALSE)))
