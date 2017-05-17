@@ -47,7 +47,7 @@ First, let's look at the distribution of `integral`. There are many hits, so it 
 histogram(~integral, hits, nint=50, type="count")
 ```
 
-That's rather disappointing. Almost all the data fall into two bins. The bins go to up to about 50 thousand, indicating that some values are very high, but their content is small and we can't really see their distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
+That's rather disappointing. Almost all the data fall into very few bins. The maximum value of `integral` is about `r as.integer(signif(max(hits$integral),2))`, but there are few values near the maximum, so the histogram has many empty bins and we can't really see the distribution. Producing the same plot using a logarithmic scale for the _x_-axis may tell us more.
 ```{r,cache=TRUE}
 histogram(~integral, hits, nint=50, type="count",
           scales = list(x = list(log = 10, equispaced = FALSE)))
@@ -59,14 +59,16 @@ bwplot(~integral, hits,
        scales = list(x = list(log = 10, equispaced = FALSE)))
 ```
 
-With this, we see our data cluster mostly between about 100 and 300, but there are large tails, and even perhaps some structure at the low end of the distribution.
+With this, we see our data cluster mostly between about
+`r as.integer(signif(quantile(hits$integral, probs=0.25),2))` and
+`r as.integer(signif(quantile(hits$integral, probs=0.75),2))` , but there are large tails, and even perhaps some structure at the low end of the distribution.
 
 Next we will look at what happens if we aggregate data event-by-event. First, let's look at the number of hits per event. We need to use the three columns that uniquely identify an event to group the data; we will also use the `data.table` facility `.N` to count the number of entries in the table (and thus hits) per event. The `[]` operator for the `data.table` provides the facility for doing the grouping, and also the calculation on the resulting groups.
 ```{r,cache=TRUE}
 histogram(~N,
           hits[, .N, .(eid.1,eid.2,eid.3)],
           nint = 50, type = "count",
-          scales = list(x = list(log = 10,equispaced = FALSE)),
+          scales = list(x = list(log = 10, equispaced = FALSE)),
           xlab="Number of hits per event")
 ```
 
@@ -75,7 +77,7 @@ It is useful to take a look at the `data.table` returned by the grouping operati
 hits[,.N,.(eid.1,eid.2,eid.3)]
 ```
 
-The result has the columns we used to uniquely identify the events, and also the calculated column `N`, containing the number of hits in each event. Note that in the data file we are reading, some events have no hits.
+The result has the columns we used to uniquely identify the events, and also the calculated column `N`, containing the number of hits in each event. Note that in the data file we are reading, some events have no clustered hits. Note also that, because of the way the ntuple was filled, we only record hits that were associated with some cluster.
 
 ### Two-dimensional analyses
 
@@ -87,7 +89,7 @@ vertices
 clusters
 ```
 
-First, we need to add some _keys_ to the `data.table`s we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster. In the call to `merge`, the `by.x` and `by.y` arguments must be vectors of the same length; the order tells which column in _x_ is to be compared with which column in _y_.
+First, we need to add some _keys_ to the `data.table` objects we are using. The allows the merging to work, and to be efficient. We will use the 3-part event identifier, and the vertex identifier (which has a different name in each table). After creating the keys, we can perform the merge. We will end up with one row in the table per cluster. In the call to `merge`, the `by.x` and `by.y` arguments must be vectors of the same length; the order tells which column in _x_ is to be compared with which column in _y_.
 
 Note: because of the way our ntuples were constructed, we have included in the `clusters` table only those clusters that have associated vertices. We have included every vertex in the `vertices` table. Thus when we make the merged table, we will have the same number of rows as we have clusters.
 ```{r,cache=TRUE}
@@ -135,10 +137,15 @@ hc <- merge(clusters, hits,
 hc
 ```
 
-What we want to study is the relation between the `sumadc` for each cluster and the sum of `integral` for all the hits in that cluster.
+What we want to study is the relation between the `sumadc` for each cluster and the sum of `integral` for all the hits in that cluster. But first, we will prepare a summary `data.table`, from which we have excluded any clusters for which `sumadc` is negative.
+```{r,cache=TRUE}
+hc.summary <- hc[, .(sumadc=first(sumadc),sumint=sum(integral)), .(eid.1,eid.2,eid.3,id)]
+hc.summary <- hc.summary[sumadc>0]
+```
+
 ```{r,cache=TRUE}
 xyplot(sumadc~sumint,
-       hc[, .(sumadc=first(sumadc), sumint=sum(integral)), .(eid.1,eid.2,eid.3,id)],
+       hc.summary,
        xlab = "sum of integral for hits in cluster",
        ylab = "sumadc for cluster",
        scales = list(x=list(log=10, equispaced=FALSE),
@@ -149,15 +156,14 @@ xyplot(sumadc~sumint,
 That is getting to be too many points to visualize with a scatterplot. We can try looking at a one-dimensional distribution of a derived quantity:
 ```{r,cache=TRUE}
 histogram(~(sumadc/sumint),
-          hc[,.(sumadc=first(sumadc), sumint=sum(integral)),.(eid.1,eid.2,eid.3,id)],
+          hc.summary,
           nint=100,
           scales=list(x=list(log=10, equispaced=FALSE)),
           type = "c")
 ```
 
-Another possibility is to visualize a 2-d kernel density estimate:
+Another possibility is to visualize a 2-d kernel density estimate. Sometimes we see clusters for which `sumadc` is negative. We will remove them from the data before we create our kernel density estimate, because we want to use a log scale.
 ```{r,cache=TRUE}
-hc.summary <- hc[,.(sumadc=first(sumadc), sumint=sum(integral)),.(eid.1,eid.2,eid.3,id)]
 hc.dens <- kde2d(log10(hc.summary$sumadc), log10(hc.summary$sumint))
 image(hc.dens, xlab="log(sumadc)", ylab="log(sum of integral)")
 contour(hc.dens, add=TRUE)
