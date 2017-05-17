@@ -63,6 +63,14 @@ With this, we see our data cluster mostly between about
 `r as.integer(signif(quantile(hits$integral, probs=0.25),2))` and
 `r as.integer(signif(quantile(hits$integral, probs=0.75),2))` , but there are large tails, and even perhaps some structure at the low end of the distribution.
 
+Here is a more detailed view of the main body of the distribution:
+```{r,cached}
+histogram(~integral, hits[integral > 10 & integral < 5000],
+          nint=50,
+          scales = list(x = list(log = 10, equispaced = FALSE)),
+          type = "count")
+```
+
 Next we will look at what happens if we aggregate data event-by-event. First, let's look at the number of hits per event. We need to use the three columns that uniquely identify an event to group the data; we will also use the `data.table` facility `.N` to count the number of entries in the table (and thus hits) per event. The `[]` operator for the `data.table` provides the facility for doing the grouping, and also the calculation on the resulting groups.
 ```{r,cache=TRUE}
 histogram(~N,
