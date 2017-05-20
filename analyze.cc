@@ -9,6 +9,7 @@
 
 #include "range/v3/all.hpp"
 
+#include <utility> // for std::forward
 #include <vector>
 
 using namespace art;
@@ -18,6 +19,27 @@ using namespace ranges::v3;
 
 #include "TH1F.h"
 #include "TH2F.h"
+
+template<typename HIST>
+struct HistoFiller
+{
+  HIST* const ph = nullptr;
+  explicit HistoFiller(HIST& h)
+    : ph(&h){};
+
+  template<typename... VALUES>
+  void operator()(VALUES&&... v) const
+  {
+    ph->Fill(std::forward<VALUES>(v)...);
+  };
+};
+
+template<class H>
+HistoFiller<H>
+hfill(H& h)
+{
+  return HistoFiller<H>(h);
+}
 
 void
 analyze_mctruths(gallery::Event const& ev,
@@ -30,7 +52,7 @@ analyze_mctruths(gallery::Event const& ev,
   // reference to the underlying data product.
   ranges::for_each(*ev.getValidHandle<vector<simb::MCTruth>>(mctruths_tag) |
                      view::transform(&simb::MCTruth::NParticles),
-                   [&hist](int n) { hist.Fill(n); });
+                   hfill(hist));
 }
 
 void

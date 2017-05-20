@@ -41,7 +41,7 @@ fi
 #
 setup -B dunetpc v06_34_00 -q +e14:+prof
 setup -B gallery v1_03_12 -q +e14:+prof:+nu
-
+setup -B range v3_0_2_4
 # The following setup assumes you want the specified version of the
 # larsoftobj distribution bundle. larsoftobj contains all the data
 # products that are part of LArSoft, but none of the algorithmic
