@@ -10,12 +10,11 @@
 #include "TH2F.h"
 #include "TInterpreter.h"
 #include "TROOT.h"
-#include "TGraph.h"
 
 using namespace art;
 using namespace std;
 
-// make a poor-man's event display of recob::hits -- pektime vs. channel, for the ievcount'th event in the file
+// make a poor-man's event display of recob::hits -- peaktime vs. channel, for the ievcount'th event in the file
 
 void
 demo2(std::string const& filename, size_t ievcount)
