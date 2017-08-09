@@ -58,7 +58,7 @@ main(int argc, char** argv) try {
 
   // These are the histograms we will be filling.
   TH1F nparticles_hist(
-    "nparticles", "Number of particles per MCTruth", 51, -0.5, 50.5);
+    "nparticles", "Number of particles per MCTruth", 50, 500.5, 1500.5);
   TH1F xhist("vertex_x", "x location of vertex", 50, -400., 400.);
   TH1F yhist("vertex_y", "y location of vertex", 50, -600., 600.);
   TH1F zhist("vertex_z", "z location of vertex", 50, 0., 1400.);
