@@ -15,14 +15,15 @@ using namespace art;
 using namespace std;
 
 // make a poor-man's event display of recob::SpacePoints -- peaktime vs. channel, for the ievcount'th event in the file
+// spacepoint tag string can be "pandora" or "pmtrack"
 
 void
-demo4(std::string const& filename, size_t ievcount)
+demo4(std::string const& filename, size_t ievcount, std::string spacepointtagstring="pandora")
 {
 
   size_t evcounter=0;
 
-  InputTag recobspacepoint_tag{ "pandora" };
+  InputTag recobspacepoint_tag{ spacepointtagstring };
   // Create a vector of length 1, containing the given filename.
   vector<string> filenames(1, filename);
 
@@ -37,18 +38,20 @@ demo4(std::string const& filename, size_t ievcount)
             TCanvas *c = new TCanvas("c","TGraph2D Event Display",0,0,800,800);
 	    for (size_t isp=0;isp<recobspacepoints.size(); ++isp)
 	      {
-		gr->SetPoint(ipc,recobspacepoints[isp].XYZ()[0],recobspacepoints[isp].XYZ()[1],recobspacepoints[isp].XYZ()[2]);
+		gr->SetPoint(ipc,recobspacepoints[isp].XYZ()[2],recobspacepoints[isp].XYZ()[0],recobspacepoints[isp].XYZ()[1]);
 		ipc ++;
 	      }
 
 	    gr->SetMarkerColor(1);
 	    gr->SetMarkerStyle(1);
-	    gr->SetTitle("TGraph2D SpacePoint Display");
-	    gr->Draw("AP");
+	    std::string titlestring=spacepointtagstring;
+	    titlestring += " SpacePoint Display";
+	    gr->SetTitle(titlestring.c_str());
+	    gr->Draw("P");
+	    gr->GetXaxis()->SetTitle("Z");
+	    gr->GetYaxis()->SetTitle("X");
+	    gr->GetZaxis()->SetTitle("Y");
 	    c->Update();
-	    gr->GetXaxis()->SetTitle("X");
-	    gr->GetYaxis()->SetTitle("Y");
-	    gr->GetYaxis()->SetTitle("Z");
 	  }
       }
     ++evcounter;
