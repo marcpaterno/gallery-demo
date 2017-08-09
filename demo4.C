@@ -14,7 +14,7 @@
 using namespace art;
 using namespace std;
 
-// make a poor-man's event display of recob::SpacePoints -- peaktime vs. channel, for the ievcount'th event in the file
+// make a poor-man's event display of recob::SpacePoints -- for the ievcount'th event in the file
 // spacepoint tag string can be "pandora" or "pmtrack"
 
 void
@@ -47,8 +47,11 @@ demo4(std::string const& filename, size_t ievcount, std::string spacepointtagstr
 	    gr->SetTitle(titlestring.c_str());
 	    gr->Draw("P");
 	    gr->GetXaxis()->SetTitle("Z");
+	    gr->GetXaxis()->SetTitleColor(4);
 	    gr->GetYaxis()->SetTitle("X");
+	    gr->GetYaxis()->SetTitleColor(4);
 	    gr->GetZaxis()->SetTitle("Y");
+	    gr->GetZaxis()->SetTitleColor(4);
 	    c->Update();
 	  }
       }
