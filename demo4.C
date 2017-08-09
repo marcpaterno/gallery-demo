@@ -33,13 +33,11 @@ demo4(std::string const& filename, size_t ievcount, std::string spacepointtagstr
 	auto const& recobspacepoints = *ev.getValidHandle<vector<recob::SpacePoint>>(recobspacepoint_tag);
 	if (!recobspacepoints.empty())
 	  {
-	    int ipc=0;
 	    TGraph2D *gr = new TGraph2D();
             TCanvas *c = new TCanvas("c","TGraph2D Event Display",0,0,800,800);
 	    for (size_t isp=0;isp<recobspacepoints.size(); ++isp)
 	      {
-		gr->SetPoint(ipc,recobspacepoints[isp].XYZ()[2],recobspacepoints[isp].XYZ()[0],recobspacepoints[isp].XYZ()[1]);
-		ipc ++;
+		gr->SetPoint(isp,recobspacepoints[isp].XYZ()[2],recobspacepoints[isp].XYZ()[0],recobspacepoints[isp].XYZ()[1]);
 	      }
 
 	    gr->SetMarkerColor(1);
