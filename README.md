@@ -23,8 +23,15 @@ The main source code for the three demonstration programs are `demo.cc`, `demo.C
 ### `demo.cc`
 
 `demo.cc` is a C++ main program which processes an input file and creates a ROOT histogram file. It is built with CMake, which is usually availble (along with your experiment software) through setup using UPS. Any "new enough" CMake can be used. This does not use the facilities provided by `cetbuildtools`; it is "bare" CMake. To compile and link the `demo` executable, use the following commands, from the directory containing the `CMakeLists.txt` file:
+
+It is important to compile your own code (or, in this case, the demo code) using the same compiler as was used to compile the version of `gallery` you are using, and to use the same C++ language standard as was used to build that version of `gallery`. Control over the C++ language resides in the `CMakeLists.txt` file. To control which compiler (*gcc* or *clang*) is used, one should rely on the *cmake* command line:
+
+If using GCC, use the switches `-DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++)`.
+
+If using Clang, use the switches `-DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++)`
+
 ```
-$ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .
+$ cmake <swiches as above> -DCMAKE_BUILD_TYPE=RelWithDebInfo .
 $ make
 ```
 
